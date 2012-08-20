@@ -15,7 +15,7 @@ t_COLON = ':'
 t_SEMIC = ';'
 t_STRING = '[a-zA-Z_0-9]+'
 
-t_ignore = ' \t'
+t_ignore = ' \t\n'
 
 def t_error(t):
     print "Illegal character %r" % t.value[0]
@@ -84,3 +84,7 @@ import ply.yacc as yacc
 yacc.yacc()
 
 print yacc.parse('(,,(,));')
+import gzip
+s = gzip.GzipFile('ncbi_complete_with_taxIDs.newick.gz').read()
+# Takes about 1 minute
+print yacc.parse(s)
