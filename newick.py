@@ -125,26 +125,37 @@ def readTree(f):
     assert ';' == c
     return node
 
-def entree(f):
+def astree(f):
     lex = Machine(f)
     return readTree(lex)
 
 def ncbi():
+    """Read the NCBI newick format file and return it as a tree
+    object (Node instance).
+    """
     import glob
     # http://docs.python.org/release/2.7.3/library/gzip.html
     import gzip
     fn = glob.glob('ncbi*')[0]
     fd = gzip.GzipFile(fn)
-    global r
-    r = entree(fd)
-    global f
-    f = search(r, 'INT9681')
+    global NCBITree
+    NCBITree = astree(fd)
+    return NCBITree
+
+def felidae(tree):
+    global NCBIFelidae
+    NCBIFelidae = search(tree, 'INT9681')
+    return NCBIFelidae
 
 def asjson():
+    """Write out the files root.json and felidae.json."""
     import json
 
-    json.dump(r.asdict(), open('root.json', 'w'))
-    json.dump(f.asdict(), open('felidae.json', 'w'))
+    root = ncbi()
+    fel = felidae(root)
+
+    json.dump(root.asdict(), open('root.json', 'w'))
+    json.dump(fel.asdict(), open('felidae.json', 'w'))
 
 def main():
     pass
