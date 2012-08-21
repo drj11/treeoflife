@@ -5,14 +5,11 @@
 # Uses PLY: http://www.dabeaz.com/ply/README.txt
 # Parses Newick format: http://en.wikipedia.org/wiki/Newick_format
 
-tokens = (
-    'PAR', 'REN', 'COMMA', 'COLON', 'SEMIC', 'STRING'
-    )
-t_PAR = r'\('
-t_REN = r'\)'
-t_COMMA = ','
-t_COLON = ':'
-t_SEMIC = ';'
+tokens = [
+    'STRING'
+    ]
+# http://www.dabeaz.com/ply/ply.html#ply_nn26
+literals = list('(),:;')
 t_STRING = '[a-zA-Z_0-9]+'
 
 t_ignore = ' \t\n'
@@ -25,7 +22,7 @@ import ply.lex as lex
 lex.lex()
 
 def p_tree(p):
-    'tree : subtree SEMIC'
+    """tree : subtree ';'"""
     p[0] = p[1]
 
 def p_subtree(p):
@@ -41,12 +38,12 @@ def p_leaf(p):
     p[0] = p[1]
 
 def p_internal(p):
-    'internal : PAR branchset REN name'
+    """internal : '(' branchset ')' name"""
     p[0] = dict(children=p[2], name=p[4])
 
 def p_branchset(p):
     '''branchset : branch
-                 | branchset COMMA branch'''
+                 | branchset ',' branch'''
     if len(p) > 2:
         assert p[2] == ','
         p[0] = p[1] + [p[3]]
@@ -70,7 +67,7 @@ def p_name(p):
 
 def p_length(p):
     '''length :
-              | COLON STRING'''
+              | ':' STRING'''
     if len(p) > 1:
         assert p[1] == ':'
         p[0] = float(STRING)
