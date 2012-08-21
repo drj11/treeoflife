@@ -1,0 +1,91 @@
+<head>
+<script oldsrc="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"
+  src="file:///home/drj/treeoflife/jquery.min.js"
+></script>
+<style>
+text {
+  fill: black;
+  stroke: none;
+  font-family: Verdana, sans-serif;
+  font-size: 12px;
+  alignment-baseline: middle;
+}
+path {
+    fill: none;
+    stroke: black;
+    stroke-width: 1px;
+}
+</style>
+<script>
+$(function() {
+u='http://localhost:8000/';
+u='file:///home/drj/treeoflife/felidae.json'
+$.getJSON(u , function(data){
+    tree=data;
+    $('.log').append('loaded')
+    console.log('ajaxd');
+    rd(tree, 0, 0)
+    rddraw(tree)
+})
+// Recursive descent on tree (the tree loaded from JSON).
+function rd(t, level, leaves) {
+    t.level = level;
+    if(!t.children) {
+        t.count = leaves
+        return leaves + 1
+    }
+    $.each(t.children, function(i,c) {
+        leaves = rd(c, level+1, leaves)
+    })
+    return leaves
+}
+// Recursive Descent drawing.
+function rddraw(t, cx, cy) {
+    t.x = t.level * 50
+    if(t.count !== undefined) {
+        t.y = t.count * 16 + 10
+        var text = svg('text', {
+          'x': t.x,
+          'y': t.y,
+        })
+        $(text).append(t.name)
+        $('.port').append(text)
+        return
+    }
+    var sy = 0;
+    $.each(t.children, function(i,c) {
+        rddraw(c)
+        sy += c.y
+    })
+    // y co-ord of interior node is average of children.
+    t.y = sy/t.children.length
+    $.each(t.children, function(i,c) {
+        var path = svg('path', {
+          'd': 'M'+t.x+' '+t.y+'L'+c.x+' '+c.y })
+        $('.port').append(path)
+    })
+}
+
+// Create DOM element in SVG namespace
+function svg(tag, attr) {
+    var el;
+    el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    if(attr) {
+        $.each(attr, function(k,v){
+            el.setAttribute(k, v)
+        })
+    }
+    return el;
+}
+})
+</script>
+</head>
+<body>
+<div class="paint">
+<svg>
+<g class='port' stroke='olive' fill='none' transform='translate(0.5,0.5)'>
+</g>
+</svg>
+</div>
+<div class="log"></div>
+</body>
