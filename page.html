@@ -20,14 +20,21 @@ path {
 $(function() {
 u='http://localhost:8000/';
 u='file:///home/drj/treeoflife/data/ncbi.json'
-$.getJSON(u , function(data){
+n='file:///home/drj/treeoflife/data/name.json'
+$.getJSON(u, function(data){
     alltree = data;
-    $('.log').append('loaded')
-    console.log('ajaxd');
-    // INT9721 Cetacea, INT9681 Felidae
-    tree = search(alltree, 'INT9721')
-    rd(tree, 0, 0)
-    rddraw(tree)
+    $('.log').append('loaded ncbi')
+    console.log('ncbi');
+    $.getJSON(n, function(data){
+        ncbiname = data;
+        $('.log').append('loaded name')
+        console.log('name');
+        console.log(ncbiname);
+        // INT9721 Cetacea, INT9681 Felidae
+        tree = search(alltree, 'INT9721')
+        rd(tree, 0, 0)
+        rddraw(tree)
+    })
 })
 // Return node with name.
 search = function(t, name) {
@@ -46,6 +53,28 @@ search = function(t, name) {
         }
     }
     return null
+}
+// lookup name from taxid.
+seekName = function(id) {
+    var n;
+    console.log(id)
+    if(id.match(/^INT/)) {
+        id = id.slice(3)
+    }
+    n = ncbiname[id]
+    if(!n) {
+        return 'Noname taxid ' + id
+    }
+    if(n.genbank) {
+        return n.genbank
+    }
+    if(n.common) {
+        return n.common
+    }
+    if(n.scientific) {
+        return n.scientific
+    }
+    return 'Noname taxid ' + id
 }
 
 // Recursive descent on tree (the tree loaded from JSON).
@@ -69,7 +98,7 @@ function rddraw(t, cx, cy) {
           'x': t.x,
           'y': t.y,
         })
-        $(text).append(t.name)
+        $(text).append(seekName(t.name))
         $('.port').append(text)
         return
     }
