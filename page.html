@@ -19,14 +19,35 @@ path {
 <script>
 $(function() {
 u='http://localhost:8000/';
-u='file:///home/drj/treeoflife/felidae.json'
+u='file:///home/drj/treeoflife/data/ncbi.json'
 $.getJSON(u , function(data){
-    tree=data;
+    alltree = data;
     $('.log').append('loaded')
     console.log('ajaxd');
+    // INT9721 Cetacea, INT9681 Felidae
+    tree = search(alltree, 'INT9721')
     rd(tree, 0, 0)
     rddraw(tree)
 })
+// Return node with name.
+search = function(t, name) {
+    if(t.name == name) {
+        return t
+    }
+    if(!t.children) {
+        return null
+    }
+    var i
+    for(i in t.children) {
+        var c = t.children[i]
+        var r = search(c, name)
+        if(r) {
+            return r
+        }
+    }
+    return null
+}
+
 // Recursive descent on tree (the tree loaded from JSON).
 function rd(t, level, leaves) {
     t.level = level;
