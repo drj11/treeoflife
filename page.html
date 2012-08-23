@@ -2,6 +2,15 @@
 <script oldsrc="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"
   src="file:///home/drj/treeoflife/jquery.min.js"
 ></script>
+<link type="text/css"
+href="file:///home/drj/treeoflife/css/themename/jquery-ui-1.8.23.custom.css"
+rel="Stylesheet" />     
+<script
+  oldsrc="file:///home/drj/treeoflife/jquery-ui-1.8.23.custom.min.js"
+  oldsrc="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.12/jquery-ui.js"
+  src="file:///home/drj/treeoflife/jquery-ui.js"
+  >
+</script>
 <style>
 text {
   fill: black;
@@ -34,6 +43,7 @@ $.getJSON(u, function(data){
         tree = search(alltree, 'INT9721')
         rd(tree, 0, 0)
         rddraw(tree)
+        $('svg').draggable()
     })
 })
 // Return node with name.
@@ -91,6 +101,10 @@ function rd(t, level, leaves) {
 }
 // Recursive Descent drawing.
 function rddraw(t, cx, cy) {
+    var $port = $('.port');
+    var style = $port.attr('drawstyle');
+    style = style || 'star';
+
     t.x = t.level * 50
     if(t.count !== undefined) {
         t.y = t.count * 16 + 10
@@ -110,10 +124,25 @@ function rddraw(t, cx, cy) {
     // y co-ord of interior node is average of children.
     t.y = sy/t.children.length
     $.each(t.children, function(i,c) {
+        var d;
+        // Star branching style.
+        d = 'M'+t.x+' '+t.y+'L'+c.x+' '+c.y;
+        if(style=='butt') {
+            // Square butt style.  Horizontal spur.
+            d = 'M'+t.x+' '+c.y+'H'+c.x;
+        }
         var path = svg('path', {
-          'd': 'M'+t.x+' '+t.y+'L'+c.x+' '+c.y })
+          'd': d})
         $('.port').append(path)
     })
+    // Square butt style.  Vertical support.
+    if(style=='butt') {
+        var last = t.children.length - 1;
+        var d = 'M'+t.x+' '+t.children[0].y+'V'+t.children[last].y;
+        var path = svg('path', {
+          'd': d})
+        $('.port').append(path)
+    }
 }
 
 // Create DOM element in SVG namespace
@@ -132,8 +161,9 @@ function svg(tag, attr) {
 </head>
 <body>
 <div class="paint">
-<svg>
-<g class='port' stroke='olive' fill='none' transform='translate(0.5,0.5)'>
+<svg height='20000px' width='1000px'>
+<g class='port' drawstyle='butt'
+  stroke='olive' fill='none' transform='translate(0.5,0.5)'>
 </g>
 </svg>
 </div>
