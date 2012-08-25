@@ -41,8 +41,16 @@ $.getJSON(u, function(data){
         $('.log').append('loaded name')
         console.log('name');
         console.log(ncbiname);
-        // INT91561 parent of Cetacea, INT9721 Cetacea, INT9681 Felidae
-        tree = search(alltree, 'INT91561')
+        // INT40674 mammals (class)
+        //   INT32525 Theria
+        //     INT9347 placentals
+        //       INT314145
+        //         INT91561
+        //           INT9721 Cetacea
+        //         INT33554
+        //           INT379583
+        //             INT9681 Felidae
+        tree = search(alltree, 'INT40674')
         rd(tree, 0, 0)
         rddraw(tree)
         $('svg').draggable()
@@ -72,7 +80,6 @@ search = function(t, name) {
 // lookup name from taxid.
 seekName = function(id) {
     var n;
-    console.log('seekName', id)
     if(id.match(/^INT/)) {
         id = id.slice(3)
     }
