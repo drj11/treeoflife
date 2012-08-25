@@ -3,14 +3,15 @@
   src="file:///home/drj/treeoflife/jquery.min.js"
 ></script>
 <link type="text/css"
-href="file:///home/drj/treeoflife/css/themename/jquery-ui-1.8.23.custom.css"
-rel="Stylesheet" />     
+  href="file:///home/drj/treeoflife/css/themename/jquery-ui-1.8.23.custom.css"
+  rel="Stylesheet" />     
 <script
   oldsrc="file:///home/drj/treeoflife/jquery-ui-1.8.23.custom.min.js"
   oldsrc="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.12/jquery-ui.js"
   src="file:///home/drj/treeoflife/jquery-ui.js"
   >
 </script>
+
 <style>
 text {
   fill: black;
@@ -29,6 +30,7 @@ path {
 $(function() {
 u='http://localhost:8000/';
 u='file:///home/drj/treeoflife/data/ncbi.json'
+u='file:///home/drj/treeoflife/data/prune.json'
 n='file:///home/drj/treeoflife/data/name.json'
 $.getJSON(u, function(data){
     alltree = data;
@@ -39,11 +41,14 @@ $.getJSON(u, function(data){
         $('.log').append('loaded name')
         console.log('name');
         console.log(ncbiname);
-        // INT9721 Cetacea, INT9681 Felidae
-        tree = search(alltree, 'INT9721')
+        // INT91561 parent of Cetacea, INT9721 Cetacea, INT9681 Felidae
+        tree = search(alltree, 'INT91561')
         rd(tree, 0, 0)
         rddraw(tree)
         $('svg').draggable()
+        $('.interior').mouseenter(function(){
+          console.log(seekName($(this).attr('taxid')))
+        })
     })
 })
 // Return node with name.
@@ -67,7 +72,7 @@ search = function(t, name) {
 // lookup name from taxid.
 seekName = function(id) {
     var n;
-    console.log(id)
+    console.log('seekName', id)
     if(id.match(/^INT/)) {
         id = id.slice(3)
     }
@@ -140,6 +145,8 @@ function rddraw(t, cx, cy) {
         var last = t.children.length - 1;
         var d = 'M'+t.x+' '+t.children[0].y+'V'+t.children[last].y;
         var path = svg('path', {
+          'class': 'interior',
+          'taxid': t.name,
           'd': d})
         $('.port').append(path)
     }
