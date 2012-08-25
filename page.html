@@ -18,7 +18,12 @@ text {
   stroke: none;
   font-family: Verdana, sans-serif;
   font-size: 12px;
+}
+text.leaf {
   alignment-baseline: middle;
+}
+text.interior {
+  text-anchor: middle;
 }
 path {
     fill: none;
@@ -121,8 +126,9 @@ function rddraw(t, cx, cy) {
     if(t.count !== undefined) {
         t.y = t.count * 16 + 10
         var text = svg('text', {
-          'x': t.x,
-          'y': t.y,
+          class: 'leaf',
+          x: t.x,
+          y: t.y,
         })
         $(text).append(seekName(t.name))
         $('.port').append(text)
@@ -150,12 +156,21 @@ function rddraw(t, cx, cy) {
     // Square butt style.  Vertical support.
     if(style=='butt') {
         var last = t.children.length - 1;
-        var d = 'M'+t.x+' '+t.children[0].y+'V'+t.children[last].y;
+        var ymin = t.children[0].y
+        var ymax = t.children[last].y
+        var d = 'M'+t.x+' '+ymin+'V'+ymax;
         var path = svg('path', {
           'class': 'interior',
           'taxid': t.name,
           'd': d})
         $('.port').append(path)
+        var text = $(svg('text',
+          {class:'interior', x:0,y:-2})).append(seekName(t.name))
+        var g = svg('g',
+          { 'transform':
+            'translate('+ t.x+' '+(ymin+ymax)/2+') rotate(-90)' })
+        $(g).append(text)
+        $('.port').append(g)
     }
 }
 
