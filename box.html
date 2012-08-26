@@ -27,11 +27,19 @@ text.interior {
 }
 path {
     fill: none;
-    stroke: black;
-    stroke-width: 1px;
+    stroke: grey;
+    stroke-width: 0.7px;
 }
 </style>
 <script>
+// http://ejohn.org/blog/fast-javascript-maxmin/
+Array.max = function( array ){
+    return Math.max.apply( Math, array );
+};
+Array.min = function( array ){
+    return Math.min.apply( Math, array );
+};
+
 $(function() {
 u='http://localhost:8000/';
 u='file:///home/drj/treeoflife/data/ncbi.json'
@@ -55,10 +63,11 @@ $.getJSON(u, function(data){
         //         INT33554
         //           INT379583
         //             INT9681 Felidae
-        tree = search(alltree, 'INT40674')
+        //               INT338152 Felinae
+        tree = search(alltree, 'INT9681')
         levels(tree, 0, 0)
         leaves(tree)
-        boxes(tree, 1600, 1200)
+        boxes(tree, 400, 600)
         // treedraw(tree)
         boxdraw(tree)
         $('svg').draggable()
@@ -82,85 +91,72 @@ leaves = function(t) {
     t.leaves = l
     return t
 }
-// Allocate a box for each node in the tree.  A node's box
-// nests all of its children's boxes.  Sibling boxes do not
-// overlap.
-// Each node has a .box attribute written to it.  Where .box =
-// [ minx, miny, maxx, maxy ].
+// Allocate width and height for a box for each node in the tree.
+// A node's box nests all of its children's boxes.
+// Sibling boxes do not overlap.
+// Each node has a .size attribute written to it.  Where .size =
+// [ width, height ].
 // Old-style divided each box equally amongst the children.
 // Which actually looks kinda cool.
 // Current algorithm divides each box in proportion to the
 // number of leaves under each child.
-boxes = function(t, w /* width */, h /* height */, minx, miny)
+var BB = 10; // Border within each box.
+boxes = function(t, w /* width */, h /* height */)
 {
-    minx = minx || 0;
-    miny = miny || 0;
-
-    t.box = [minx, miny, minx+w, miny+h]
+    var minsize = 13; // Minimum width or height for a box.
     if(!t.children) {
+        w = Math.max(minsize, w)
+        h = Math.max(minsize, h)
+        t.size = [w, h]
         return
     }
-    var b = 2; // Border within each box.
-    var minsize = 13; // Minimum width or height for a box.
     var n = t.children.length;
-    var axis;
-    w -= b;
-    h -= b;
-    if(w>h) {
-        axis = 'horiz'
+    var layout;
+    if(w>=h) {
+        layout = 'horiz'
     } else {
-        axis = 'vert'
+        layout = 'vert'
     }
-    var splits;
-    if(axis == 'horiz') {
+    t.layout = layout;
+    // Sort children in increasing order (of leaf count).
+    var sl = t.children.concat().sort(function(a,b){
+        return a.leaves - b.leaves;
+    })
+    var leaves = t.leaves;
+    var space;
+    if(layout == 'horiz') {
         // Split horizontally.
-        splits = split(w, t.children, minx+b, minsize, b)
-        $(t.children).each(function(i,c){
-            boxes(c, splits[i].q, h-b, splits[i].p, miny+b)
+        space = w - (n+1)*BB;
+        $(sl).each(function(i,c){
+            var tryw = (c.leaves/leaves * space)
+            console.log('horiz', w, h, i, space, tryw, c.leaves, leaves)
+            boxes(c, tryw, h-2*BB)
+            space -= c.size[0]
+            leaves -= c.leaves
         })
+        if(0 > space) {
+            console.log(t.name, "not wide enough")
+        }
+        var maxh = Array.max(t.children.map(function(x){
+          return x.size[1]}))
+        t.size = [w, maxh+2*BB]
     } else {
         // Split vertically.
-        splits = split(h, t.children, miny+b, minsize, b)
-        $(t.children).each(function(i,c){
-            boxes(c, w-b, splits[i].q, minx+b, splits[i].p)
+        space = h - (n+1)*BB;
+        $(sl).each(function(i,c){
+            var tryh = (c.leaves/leaves * space)
+            console.log('vert', w, h, i, space, tryh, c.leaves, leaves)
+            boxes(c, w-2*BB, tryh)
+            space -= c.size[1]
+            leaves -= c.leaves
         })
+        if(0 > space) {
+            console.log(t.name, "not high enough")
+        }
+        var maxw = Array.max(t.children.map(function(x){
+          return x.size[0]}))
+        t.size = [maxw+2*BB, h]
     }
-}
-
-// Split the quantity A up.  A list [r, ...] is returned, with one
-// element for each element of t.  r.q is the quantity of A
-// allocated to the corresponding element of t.  r.p is the
-// coordinate to be used for drawing a box.  *minsize* governs
-// the minimum value for .q (which will be honoured only if it
-// can).
-split = function(A, t, p, minsize, b)
-{
-    var n = t.length;
-    if(A/n < minsize+b) {
-        console.log("too many boxes:", t)
-        return $(t).map(function(i,c){
-            return {q:A/n-b, p:p+i*A/n}
-        })
-    }
-    // Total leaves.
-    var tleaves = t.reduce(function(a,b){return a+b.leaves}, 0)
-    // children, sorted by increasing size.
-    var l = t.concat().sort(function(a,b){
-      return a.leaves-b.leaves})
-    // Annotate each child with .q
-    A -= n*b;
-    $(l).each(function(i,c){
-        var f = c.leaves/tleaves*A
-        f = Math.max(f, minsize)
-        c.q = f;
-    })
-    // Go through in the original order for t, allocating
-    // co-ordinates. (NOTE: modifies *p*!)
-    return $(t).map(function(i,c){
-        var r = {p:p, q:c.q}
-        p += c.q+b
-        return r
-    })
 }
 
 // Return node with name.
@@ -274,46 +270,54 @@ function treedraw(t, cx, cy) {
         $('.port').append(g)
     }
 }
-// Draw the tree t box style, in the element specified by
+// Draw the tree *t* box style, in the element specified by
 // selector.  The element is emptied first.
 boxdraw = function(t, selector)
 {
     selector = selector || '.port';
     $(selector).empty();
-    return boxdrawr(t, selector)
+    return boxdrawr(t, selector, 0, 0)
 }
-boxdrawr = function(t, selector) {
+boxdrawr = function(t, selector, x, y) {
     var path;
     var d;
-    var box = t.box
-    d = 'M'+box[0]+' '+box[1]+'V'+box[3]+'H'+box[2]+'V'+box[1]+'z';
-    // console.log(t.name, d)
-    path = svg('path', {d:d, taxid:t.name})
+    var w = t.size[0];
+    var h = t.size[1];
+    d = 'M'+x+' '+y+'v'+h+'h'+w+'V'+y+'z';
+    path = svg('path', {class:seekName(t.name), d:d, taxid:t.name})
+    t.x = x
+    t.y = y
     $(selector).append(path)
     if(!t.children) {
         labelBox(t)
         return
     }
+    x += BB;
+    y += BB;
     $(t.children).each(function(i,c){
-        boxdrawr(c, selector)
+        boxdrawr(c, selector, x, y)
+        if(t.layout == 'horiz') {
+            x += c.size[0] + BB;
+        } else {
+            y += c.size[1] + BB;
+        }
     })
 }
 
 labelBox = function(t)
 {
-    var box = t.box;
     var text;
     var w,h;
-    w = box[2]-box[0]
-    h = box[3]-box[1]
+    w = t.size[0]
+    h = t.size[1]
     var name = seekName(t.name);
-    if(h >= 10 && w >= 20) {
+    if(h >= 10 && w >= 30) {
         text = svg('text',
-            { class: 'leaf', x:box[0]+1, y:box[3]-2} )
+            { class: 'leaf', x:t.x+1, y:t.y+h-2} )
     } else if(h >= 20 && w >= 10) {
         text = svg('text',
             { class: 'leaf',
-              transform: 'translate('+(box[2]-2)+','+(box[3]-1)+
+              transform: 'translate('+(t.x+w-2)+','+(t.y+h-1)+
                 ') rotate(-90)',
               x:0, y:0 })
     }
