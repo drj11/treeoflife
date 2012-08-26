@@ -1,0 +1,324 @@
+<head>
+<script oldsrc="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"
+  src="file:///home/drj/treeoflife/jquery.min.js"
+></script>
+<link type="text/css"
+  href="file:///home/drj/treeoflife/css/themename/jquery-ui-1.8.23.custom.css"
+  rel="Stylesheet" />     
+<script
+  oldsrc="file:///home/drj/treeoflife/jquery-ui-1.8.23.custom.min.js"
+  oldsrc="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.12/jquery-ui.js"
+  src="file:///home/drj/treeoflife/jquery-ui.js"
+  >
+</script>
+
+<style>
+text {
+  fill: black;
+  stroke: none;
+  font-family: Verdana, sans-serif;
+  font-size: 12px;
+}
+text.leaf {
+  font-size: 10px;
+}
+text.interior {
+  text-anchor: middle;
+}
+path {
+    fill: none;
+    stroke: black;
+    stroke-width: 1px;
+}
+</style>
+<script>
+$(function() {
+u='http://localhost:8000/';
+u='file:///home/drj/treeoflife/data/ncbi.json'
+u='file:///home/drj/treeoflife/data/prune.json'
+n='file:///home/drj/treeoflife/data/name.json'
+$.getJSON(u, function(data){
+    alltree = data;
+    $('.log').append('loaded ncbi')
+    console.log('ncbi');
+    $.getJSON(n, function(data){
+        ncbiname = data;
+        $('.log').append('loaded name')
+        console.log('name');
+        console.log(ncbiname);
+        // INT40674 mammals (class)
+        //   INT32525 Theria
+        //     INT9347 placentals
+        //       INT314145
+        //         INT91561
+        //           INT9721 Cetacea
+        //         INT33554
+        //           INT379583
+        //             INT9681 Felidae
+        tree = search(alltree, 'INT40674')
+        levels(tree, 0, 0)
+        leaves(tree)
+        boxes(tree, 1600, 1200)
+        // treedraw(tree)
+        boxdraw(tree)
+        $('svg').draggable()
+        $('.interior').mouseenter(function(){
+          console.log(seekName($(this).attr('taxid')))
+        })
+    })
+})
+// Annotate tree *t* by counting number of leaves
+// underneath each node.  .leaves attribute is modified.
+leaves = function(t) {
+    if(!t.children) {
+        t.leaves = 1
+        return t
+    }
+    var l = 0;
+    $(t.children).each(function(i, c){
+      leaves(c)
+      l += c.leaves
+    })
+    t.leaves = l
+    return t
+}
+// Allocate a box for each node in the tree.  A node's box
+// nests all of its children's boxes.  Sibling boxes do not
+// overlap.
+// Each node has a .box attribute written to it.  Where .box =
+// [ minx, miny, maxx, maxy ].
+// Old-style divided each box equally amongst the children.
+// Which actually looks kinda cool.
+// Current algorithm divides each box in proportion to the
+// number of leaves under each child.
+boxes = function(t, w /* width */, h /* height */, minx, miny)
+{
+    minx = minx || 0;
+    miny = miny || 0;
+
+    t.box = [minx, miny, minx+w, miny+h]
+    if(!t.children) {
+        return
+    }
+    var b = 2; // Border within each box.
+    var minsize = 5; // Minimum width or height for a box.
+    var n = t.children.length;
+    var axis;
+    w -= b;
+    h -= b;
+    if(w>h) {
+        axis = 'horiz'
+    } else {
+        axis = 'vert'
+    }
+    var splits;
+    if(axis == 'horiz') {
+        // Split horizontally.
+        splits = split(w, t.children, minx+b, minsize, b)
+        $(t.children).each(function(i,c){
+            boxes(c, splits[i].q, h-b, splits[i].p, miny+b)
+        })
+    } else {
+        // Split vertically.
+        splits = split(h, t.children, miny+b, minsize, b)
+        $(t.children).each(function(i,c){
+            boxes(c, w-b, splits[i].q, minx+b, splits[i].p)
+        })
+    }
+}
+
+// Split the quantity A up.  A list [r, ...] is returned, with one
+// element for each element of t.  r.q is the quantity of A
+// allocated to the corresponding element of t.  r.p is the
+// coordinate to be used for drawing a box.  *minsize* governs
+// the minimum value for .q (which will be honoured only if it
+// can).
+split = function(A, t, p, minsize, b)
+{
+    var n = t.length;
+    if(A/n < minsize+b) {
+        console.log("too many boxes:", t)
+        return $(t).map(function(i,c){
+            return {q:A/n-b, p:p+i*A/n}
+        })
+    }
+    // Total leaves.
+    var tleaves = t.reduce(function(a,b){return a+b.leaves}, 0)
+    // children, sorted by increasing size.
+    var l = t.concat().sort(function(a,b){
+      return a.leaves-b.leaves})
+    // Annotate each child with .q
+    A -= n*b;
+    $(l).each(function(i,c){
+        var f = c.leaves/tleaves*A
+        f = Math.max(f, minsize)
+        c.q = f;
+    })
+    // Go through in the original order for t, allocating
+    // co-ordinates. (NOTE: modifies *p*!)
+    return $(t).map(function(i,c){
+        var r = {p:p, q:c.q}
+        p += c.q+b
+        return r
+    })
+}
+
+// Return node with name.
+search = function(t, name) {
+    if(t.name == name) {
+        return t
+    }
+    if(!t.children) {
+        return null
+    }
+    var i
+    for(i in t.children) {
+        var c = t.children[i]
+        var r = search(c, name)
+        if(r) {
+            return r
+        }
+    }
+    return null
+}
+// lookup name from taxid.
+seekName = function(id) {
+    var n;
+    if(id.match(/^INT/)) {
+        id = id.slice(3)
+    }
+    n = ncbiname[id]
+    if(!n) {
+        return 'Noname taxid ' + id
+    }
+    if(n.genbank) {
+        return n.genbank
+    }
+    if(n.common) {
+        return n.common
+    }
+    if(n.scientific) {
+        return n.scientific
+    }
+    return 'Noname taxid ' + id
+}
+
+// Recursive descent on tree to compute .level (distance from
+// root) for all nodes, and .count for leaf nodes (the ordinal
+// sequence in left-to-right traversal.
+function levels(t, level, leaves) {
+    t.level = level;
+    if(!t.children) {
+        t.count = leaves
+        return leaves + 1
+    }
+    $.each(t.children, function(i,c) {
+        leaves = levels(c, level+1, leaves)
+    })
+    return leaves
+}
+// Recursive Descent drawing.
+function treedraw(t, cx, cy) {
+    var $port = $('.port');
+    var style = $port.attr('drawstyle');
+    style = style || 'star';
+
+    t.x = t.level * 50
+    if(t.count !== undefined) {
+        t.y = t.count * 16 + 10
+        var text = svg('text', {
+          class: 'leaf',
+          x: t.x,
+          y: t.y,
+        })
+        $(text).append(seekName(t.name))
+        $('.port').append(text)
+        return
+    }
+    var sy = 0;
+    $.each(t.children, function(i,c) {
+        treedraw(c)
+        sy += c.y
+    })
+    // y co-ord of interior node is average of children.
+    t.y = sy/t.children.length
+    $.each(t.children, function(i,c) {
+        var d;
+        // Star branching style.
+        d = 'M'+t.x+' '+t.y+'L'+c.x+' '+c.y;
+        if(style=='butt') {
+            // Square butt style.  Horizontal spur.
+            d = 'M'+t.x+' '+c.y+'H'+c.x;
+        }
+        var path = svg('path', {
+          'd': d})
+        $('.port').append(path)
+    })
+    // Square butt style.  Vertical support.
+    if(style=='butt') {
+        var last = t.children.length - 1;
+        var ymin = t.children[0].y
+        var ymax = t.children[last].y
+        var d = 'M'+t.x+' '+ymin+'V'+ymax;
+        var path = svg('path', {
+          'class': 'interior',
+          'taxid': t.name,
+          'd': d})
+        $('.port').append(path)
+        var text = $(svg('text',
+          {class:'interior', x:0,y:-2})).append(seekName(t.name))
+        var g = svg('g',
+          { 'transform':
+            'translate('+t.x+' '+(ymin+ymax)/2+') rotate(-90)' })
+        $(g).append(text)
+        $('.port').append(g)
+    }
+}
+boxdraw = function(t) {
+    var path;
+    var d;
+    var box = t.box
+    var text
+    d = 'M'+box[0]+' '+box[1]+'V'+box[3]+'H'+box[2]+'V'+box[1]+'z';
+    // console.log(t.name, d)
+    path = svg('path', {d:d, taxid:t.name})
+    $('.port').append(path)
+    if(!t.children) {
+        // Box labels
+        if(box[3]-box[1] >= 10 && box[2]-box[0] >= 20) {
+            text = svg('text',
+                { class: 'leaf', x:box[0], y:box[3]-1} )
+            $(text).append(seekName(t.name))
+            $('.port').append(text)
+        }
+        return
+    }
+    $(t.children).each(function(i,c){
+        boxdraw(c)
+    })
+}
+
+// Create DOM element in SVG namespace
+function svg(tag, attr) {
+    var el;
+    el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    if(attr) {
+        $.each(attr, function(k,v){
+            el.setAttribute(k, v)
+        })
+    }
+    return el;
+}
+})
+</script>
+</head>
+<body>
+<div class="paint">
+<svg height='20000px' width='1500px'>
+<g class='port' drawstyle='butt'
+  stroke='olive' fill='none' transform='translate(0.5,0.5)'>
+</g>
+</svg>
+</div>
+<div class="log"></div>
+</body>
