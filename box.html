@@ -64,10 +64,10 @@ $.getJSON(u, function(data){
         //           INT379583
         //             INT9681 Felidae
         //               INT338152 Felinae
-        tree = search(alltree, 'INT9681')
+        tree = search(alltree, 'INT40674')
         levels(tree, 0, 0)
         leaves(tree)
-        boxes(tree, 400, 600)
+        boxes(tree, 1600, 1200)
         // treedraw(tree)
         boxdraw(tree)
         $('svg').draggable()
@@ -100,10 +100,10 @@ leaves = function(t) {
 // Which actually looks kinda cool.
 // Current algorithm divides each box in proportion to the
 // number of leaves under each child.
-var BB = 10; // Border within each box.
+var BB = 2; // Border within each box.
 boxes = function(t, w /* width */, h /* height */)
 {
-    var minsize = 13; // Minimum width or height for a box.
+    var minsize = 10; // Minimum width or height for a box.
     if(!t.children) {
         w = Math.max(minsize, w)
         h = Math.max(minsize, h)
@@ -129,7 +129,6 @@ boxes = function(t, w /* width */, h /* height */)
         space = w - (n+1)*BB;
         $(sl).each(function(i,c){
             var tryw = (c.leaves/leaves * space)
-            console.log('horiz', w, h, i, space, tryw, c.leaves, leaves)
             boxes(c, tryw, h-2*BB)
             space -= c.size[0]
             leaves -= c.leaves
@@ -145,7 +144,6 @@ boxes = function(t, w /* width */, h /* height */)
         space = h - (n+1)*BB;
         $(sl).each(function(i,c){
             var tryh = (c.leaves/leaves * space)
-            console.log('vert', w, h, i, space, tryh, c.leaves, leaves)
             boxes(c, w-2*BB, tryh)
             space -= c.size[1]
             leaves -= c.leaves
