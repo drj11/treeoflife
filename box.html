@@ -45,39 +45,43 @@ u='http://localhost:8000/';
 u='data/ncbi.json'
 u='data/prune.json'
 n='data/name.json'
+x='data/extinct.json'
 $.getJSON(u, function(data){
     alltree = data;
     $('.log').append('loaded ncbi')
     console.log('ncbi');
-    $.getJSON(n, function(data){
-        ncbiname = data;
-        $('.log').append('loaded name')
-        console.log('name');
-        console.log(ncbiname);
-        // INT40674 mammals (class)
-        //   INT32525 Theria
-        //     INT9347 placentals
-        //       INT314145
-        //         INT91561
-        //           INT9721 Cetacea
-        //         INT33554
-        //           INT379583
-        //             INT9681 Felidae
-        //               INT338152 Felinae
-        tree = search(alltree, 'INT40674')
-        tree = remove_unwanted(tree)
-        // Not necessary for box presentation.
-        levels(tree, 0, 0)
-        leaves(tree)
-        boxes(tree, 1600, 1200)
-        // treedraw(tree)
-        boxdraw(tree)
-        $('path.Equus').css('fill', 'url(#zebra)')
-        $('path.Leopardus').css('fill', 'url(#ocelot)')
-        $('path.Giraffa').css('fill', 'url(#giraffe)')
-        // $('svg').draggable()
-        $('.interior').mouseenter(function(){
-          console.log(seekName($(this).attr('taxid')))
+    $.getJSON(x, function(data){
+        extinct = data
+        $.getJSON(n, function(data){
+            ncbiname = data;
+            $('.log').append('loaded name')
+            console.log('name');
+            console.log(ncbiname);
+            // INT40674 mammals (class)
+            //   INT32525 Theria
+            //     INT9347 placentals
+            //       INT314145
+            //         INT91561
+            //           INT9721 Cetacea
+            //         INT33554
+            //           INT379583
+            //             INT9681 Felidae
+            //               INT338152 Felinae
+            tree = search(alltree, 'INT40674')
+            tree = remove_unwanted(tree)
+            // Not necessary for box presentation.
+            levels(tree, 0, 0)
+            leaves(tree)
+            boxes(tree, 1600, 1200)
+            // treedraw(tree)
+            boxdraw(tree)
+            $('path.Equus').css('fill', 'url(#zebra)')
+            $('path.Leopardus').css('fill', 'url(#ocelot)')
+            $('path.Giraffa').css('fill', 'url(#giraffe)')
+            // $('svg').draggable()
+            $('.interior').mouseenter(function(){
+              console.log(seekName($(this).attr('taxid')))
+            })
         })
     })
 })
@@ -211,26 +215,36 @@ search = function(t, name) {
 // lookup name from taxid.
 seekName = function(id) {
     var n;
+    var r;
     if(id.match(/^INT/)) {
         id = id.slice(3)
     }
+    // 2204
     n = ncbiname[id]
     if(!n) {
-        return 'Noname taxid ' + id
-    }
-    if(n.genbank) {
-        return n.genbank
-    }
-    if(n.common) {
-        return n.common
-    }
-    if(n.scientific) {
+        r = 'Noname taxid ' + id
+    } else if(n.genbank) {
+        r = n.genbank
+    } else if(n.common) {
+        r = n.common
+    } else if(n.scientific) {
         if(n.scientific.match(/environmental +samples/)) {
             console.log('environmental samples', id)
         }
-        return n.scientific
+        r = n.scientific
     }
-    return 'Noname taxid ' + id
+    if(!r) {
+        r = 'Noname taxid ' + id
+    }
+    // r = r.replace(/^unclassified/, '\u2316')
+    r = r.replace(/^unclassified/, '?')
+    if(extinct[id]) {
+        // There Does Not Exist (funny, but looks bad)
+        // r = '\u2204 ' + r
+        // Black Diamond Minus White X
+        r = '\u2756 ' + r
+    }
+    return r
 }
 
 // Recursive descent on tree to compute .level (distance from
