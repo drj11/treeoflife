@@ -65,7 +65,7 @@ $.getJSON(u, function(data){
         //             INT9681 Felidae
         //               INT338152 Felinae
         tree = search(alltree, 'INT40674')
-        tree = remove_nonames(tree)
+        tree = remove_unwanted(tree)
         // Not necessary for box presentation.
         levels(tree, 0, 0)
         leaves(tree)
@@ -79,14 +79,14 @@ $.getJSON(u, function(data){
     })
 })
 
-// Remove the nodes in t that have no name.
-remove_nonames = function(t)
+// Remove the nodes in t that have no name, and those whose
+// name contains 'environmental samples'.
+remove_unwanted = function(t)
 {
     var id = t.name.replace(/^INT/,'')
-    if(!ncbiname[id]) {
-        if(t.children) {
-            console.log('unnamed node has children', t)
-        }
+    if(!ncbiname[id] ||
+      ncbiname[id].scientific.match(/environmental +samples/))
+    {
         return null
     }
     if(!t.children) {
@@ -94,7 +94,7 @@ remove_nonames = function(t)
     }
     var children = []
     $(t.children).each(function(i,c){
-        var r = remove_nonames(c)
+        var r = remove_unwanted(c)
         if(r) {
             children.push(r)
         }
@@ -222,6 +222,9 @@ seekName = function(id) {
         return n.common
     }
     if(n.scientific) {
+        if(n.scientific.match(/environmental +samples/)) {
+            console.log('environmental samples', id)
+        }
         return n.scientific
     }
     return 'Noname taxid ' + id
