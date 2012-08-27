@@ -72,7 +72,10 @@ $.getJSON(u, function(data){
         boxes(tree, 1600, 1200)
         // treedraw(tree)
         boxdraw(tree)
-        $('svg').draggable()
+        $('path.Equus').css('fill', 'url(#zebra)')
+        $('path.Leopardus').css('fill', 'url(#ocelot)')
+        $('path.Giraffa').css('fill', 'url(#giraffe)')
+        // $('svg').draggable()
         $('.interior').mouseenter(function(){
           console.log(seekName($(this).attr('taxid')))
         })
@@ -374,7 +377,41 @@ function svg(tag, attr) {
 </head>
 <body>
 <div class="paint">
-<svg height='20000px' width='1800px'>
+<svg height='20000px' width='1800px'
+  xmlns:xlink="http://www.w3.org/1999/xlink"
+>
+<defs>
+  <pattern id="zebra" width='228' height='206'
+    patternUnits='userSpaceOnUse'
+    patternTransform='scale(0.5)'
+  >
+    <image
+      xlink:href="file:///home/drj/treeoflife/zebracrop.jpg"
+      width='228'
+      height='206'
+    />
+  </pattern>
+  <pattern id="ocelot" width='246' height='208'
+    patternUnits='userSpaceOnUse'
+    patternTransform='scale(0.5)'
+  >
+    <image
+      xlink:href="file:///home/drj/treeoflife/ocelotcrop.jpg"
+      width='246'
+      height='208'
+    />
+  </pattern>
+  <pattern id="giraffe" width='141' height='105'
+    patternUnits='userSpaceOnUse'
+    patternTransform='scale(0.5)'
+  >
+    <image
+      xlink:href="file:///home/drj/treeoflife/giraffecrop.jpg"
+      width='141'
+      height='105'
+    />
+  </pattern>
+</defs>
 <g class='port' drawstyle='butt'
   stroke='olive' fill='none' transform='translate(0.5,0.5)'>
 </g>
