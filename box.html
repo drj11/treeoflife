@@ -42,9 +42,9 @@ Array.min = function( array ){
 
 $(function() {
 u='http://localhost:8000/';
-u='file:///home/drj/treeoflife/data/ncbi.json'
-u='file:///home/drj/treeoflife/data/prune.json'
-n='file:///home/drj/treeoflife/data/name.json'
+u='data/ncbi.json'
+u='data/prune.json'
+n='data/name.json'
 $.getJSON(u, function(data){
     alltree = data;
     $('.log').append('loaded ncbi')
