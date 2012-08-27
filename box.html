@@ -65,6 +65,8 @@ $.getJSON(u, function(data){
         //             INT9681 Felidae
         //               INT338152 Felinae
         tree = search(alltree, 'INT40674')
+        tree = remove_nonames(tree)
+        // Not necessary for box presentation.
         levels(tree, 0, 0)
         leaves(tree)
         boxes(tree, 1600, 1200)
@@ -76,6 +78,34 @@ $.getJSON(u, function(data){
         })
     })
 })
+
+// Remove the nodes in t that have no name.
+remove_nonames = function(t)
+{
+    var id = t.name.replace(/^INT/,'')
+    if(!ncbiname[id]) {
+        if(t.children) {
+            console.log('unnamed node has children', t)
+        }
+        return null
+    }
+    if(!t.children) {
+        return t
+    }
+    var children = []
+    $(t.children).each(function(i,c){
+        var r = remove_nonames(c)
+        if(r) {
+            children.push(r)
+        }
+    })
+    delete t.children
+    if(children.length) {
+        t.children = children
+    }
+    return t
+}
+
 // Annotate tree *t* by counting number of leaves
 // underneath each node.  .leaves attribute is modified.
 leaves = function(t) {
