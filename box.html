@@ -136,7 +136,7 @@ leaves = function(t) {
 // Allocate width and height for a box for each node in the tree.
 // A node's box nests all of its children's boxes.
 // Sibling boxes do not overlap.
-// Each node has a .size attribute written to it.  Where .size =
+// Each node has a .size attribute written to it, where .size =
 // [ width, height ].
 // Old-style divided each box equally amongst the children.
 // Which actually looks kinda cool.
@@ -152,7 +152,6 @@ boxes = function(t, w /* width */, h /* height */)
         return
     }
     var n = t.children.length;
-    var layout;
     var dimension = [w, h]
     var axis;
     if(w>=h) {
@@ -187,6 +186,7 @@ boxes = function(t, w /* width */, h /* height */)
     })
     if(0 > space) {
         console.log(t.name, "not enough "+['horiz','vert'][axis])
+        t.outofspace = true
     }
     // Allow box to stretch in the other dimension to *axis*.
     // Slightly nasty in that it just assumes 2 axes.
@@ -331,11 +331,14 @@ boxdraw = function(t, selector)
 }
 boxdrawr = function(t, selector, x, y) {
     var path;
-    var d;
     var w = t.size[0];
     var h = t.size[1];
-    d = 'M'+x+' '+y+'v'+h+'h'+w+'V'+y+'z';
-    path = svg('path', {class:seekName(t.name), d:d, taxid:t.name})
+    var d = 'M'+x+' '+y+'v'+h+'h'+w+'V'+y+'z';
+    var class_ = seekName(t.name);
+    if(t.outofspace) {
+        class_ += ' outofspace'
+    }
+    path = svg('path', {class:class_, d:d, taxid:t.name})
     t.x = x
     t.y = y
     $(selector).append(path)
