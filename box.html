@@ -425,9 +425,6 @@ boxdrawr = function(t, selector, x, y) {
         axis = 1;
     }
     var tworows = t.layout.match(/^2/)
-    if(tworows) {
-        console.log("tworows", t.name, t)
-    }
     $(t.children).each(function(i,c){
         boxdrawr(c, selector, p[0], p[1])
         p[axis] += c.size[axis] + BB
