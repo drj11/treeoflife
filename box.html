@@ -46,16 +46,15 @@ u='data/ncbi.json'
 u='data/prune.json'
 n='data/name.json'
 x='data/extinct.json'
+var BB = 2; // Border within each box.
 $.getJSON(u, function(data){
     alltree = data;
-    $('.log').append('loaded ncbi')
-    console.log('ncbi');
+    console.log('loaded', u);
     $.getJSON(x, function(data){
         extinct = data
         $.getJSON(n, function(data){
             ncbiname = data;
-            $('.log').append('loaded name')
-            console.log('name');
+            console.log('loaded', n);
             console.log(ncbiname);
             // INT40674 mammals (class)
             //   INT32525 Theria
@@ -67,12 +66,18 @@ $.getJSON(u, function(data){
             //           INT379583
             //             INT9681 Felidae
             //               INT338152 Felinae
-            tree = search(alltree, 'INT40674')
+            var target = 'INT40674'
+            tree = search(alltree, target)
             tree = remove_unwanted(tree)
             // Not necessary for box presentation.
             levels(tree, 0, 0)
             leaves(tree)
-            boxes(tree, 1600, 1200)
+            var bigbox = [1600, 1200]
+            if(target == 'INT9681') {
+                bigbox = [400,200]
+                BB = 10
+            }
+            boxes(tree, bigbox[0], bigbox[1])
             // treedraw(tree)
             boxdraw(tree)
             $('path.Equus').css('fill', 'url(#zebra)')
@@ -137,7 +142,6 @@ leaves = function(t) {
 // Which actually looks kinda cool.
 // Current algorithm divides each box in proportion to the
 // number of leaves under each child.
-var BB = 2; // Border within each box.
 boxes = function(t, w /* width */, h /* height */)
 {
     var minsize = 10; // Minimum width or height for a box.
@@ -149,49 +153,48 @@ boxes = function(t, w /* width */, h /* height */)
     }
     var n = t.children.length;
     var layout;
+    var dimension = [w, h]
+    var axis;
     if(w>=h) {
-        layout = 'horiz'
+        t.layout = 'horiz'
+        axis = 0
     } else {
-        layout = 'vert'
+        t.layout = 'vert'
+        axis = 1
     }
-    t.layout = layout;
     // Sort children in increasing order (of leaf count).
     var sl = t.children.concat().sort(function(a,b){
         return a.leaves - b.leaves;
     })
     var leaves = t.leaves;
     var space;
-    if(layout == 'horiz') {
-        // Split horizontally.
-        space = w - (n+1)*BB;
-        $(sl).each(function(i,c){
-            var tryw = (c.leaves/leaves * space)
-            boxes(c, tryw, h-2*BB)
-            space -= c.size[0]
-            leaves -= c.leaves
+
+    // Split along axis *axis* (0: horizontal, 1: vertical).
+    space = dimension[axis] - (n+1)*BB
+    $(sl).each(function(i,c){
+        var some = c.leaves/leaves * space
+        var childbox = dimension.slice()
+        $(childbox).each(function(i,d) {
+            if(i == axis) {
+                childbox[i] = some
+            } else {
+                childbox[i] -= 2*BB
+            }
         })
-        if(0 > space) {
-            console.log(t.name, "not wide enough")
-        }
-        var maxh = Array.max(t.children.map(function(x){
-          return x.size[1]}))
-        t.size = [w, maxh+2*BB]
-    } else {
-        // Split vertically.
-        space = h - (n+1)*BB;
-        $(sl).each(function(i,c){
-            var tryh = (c.leaves/leaves * space)
-            boxes(c, w-2*BB, tryh)
-            space -= c.size[1]
-            leaves -= c.leaves
-        })
-        if(0 > space) {
-            console.log(t.name, "not high enough")
-        }
-        var maxw = Array.max(t.children.map(function(x){
-          return x.size[0]}))
-        t.size = [maxw+2*BB, h]
+        boxes(c, childbox[0], childbox[1])
+        space -= c.size[axis]
+        leaves -= c.leaves
+    })
+    if(0 > space) {
+        console.log(t.name, "not enough "+['horiz','vert'][axis])
     }
+    // Allow box to stretch in the other dimension to *axis*.
+    // Slightly nasty in that it just assumes 2 axes.
+    var maxd = Array.max(t.children.map(function(x){
+        return x.size[1-axis]}))
+    t.size = [maxd + 2*BB, maxd + 2*BB]
+    t.size[axis] = dimension[axis]
+
 }
 
 // Return node with name.
