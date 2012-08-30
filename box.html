@@ -189,8 +189,31 @@ boxes = function(t, w /* width */, h /* height */)
             }
         })
         if(all1) {
-            t.layout = '2' + t.layout
-            split2(t, axis, [w,h])
+            var m = 2;
+            var layout = t.layout
+            var res;
+            do {
+                t.layout = m + layout
+                res = splitm(t, m, axis, [w,h])
+                ++m
+            } while(!res && m <= 4)
+            if(!res) {
+              console.log(t.name, "not enough "+['horiz','vert'][axis])
+              t.outofspace = true
+            }
+        } else {
+          // Log the number of different .leaves in the collection
+          // of children.
+          var x = {}
+          var s = []
+          var k
+          $(t.children).each(function(i,c){
+              x[c.leaves] = true
+          })
+          for(k in x) {
+              s = s.concat([k])
+          }
+          console.log("child sizes "+s, "node", t)
         }
         t.size = [w,h]
     } else {
@@ -216,11 +239,10 @@ split1 = function(t, axis, dimension)
     })
     return split1list(t, sl, axis, dimension)
 }
-// Split the box into 2, with a cut parallel to axis, then split
+// Split the box into *m*, with cuts parallel to *axis*, then split
 // again to allocate space for the children.
-split2 = function(t, axis, dimension)
+splitm = function(t, m, axis, dimension)
 {
-    var m = 2
     var n = m*Math.ceil(t.children.length/m)
     var j;
     var res = true;
@@ -267,20 +289,6 @@ split1list = function(t, inorder, axis, dimension)
         leaves -= c.leaves
     })
     if(0 > space) {
-        console.log(t.name, "not enough "+['horiz','vert'][axis])
-        t.outofspace = true
-        // Log the number of different .leaves in the collection
-        // of children.
-        var x = {}
-        var s = []
-        var k
-        $(t.children).each(function(i,c){
-            x[c.leaves] = true
-        })
-        for(k in x) {
-            s = s.concat([k])
-        }
-        console.log("child sizes "+s)
         return false
     }
     return true
@@ -449,11 +457,16 @@ boxdrawr = function(t, selector, x, y) {
     } else {
         axis = 1;
     }
-    var tworows = t.layout.match(/^2/)
+    var m = t.layout.match(/^\d+/)
+    var nrows = 1
+    if(m) {
+        nrows = +m[0]
+    }
+    var rowlen = Math.ceil(n/nrows)
     $(t.children).each(function(i,c){
         boxdrawr(c, selector, p[0], p[1])
         p[axis] += c.size[axis] + BB
-        if(tworows && p[1-axis] == origin[1-axis] && i+1 >= n/2) {
+        if(Math.floor(i/rowlen) != Math.floor((i+1)/rowlen)) {
             p[axis] = origin[axis]
             p[1-axis] += c.size[1-axis] + BB
         }
