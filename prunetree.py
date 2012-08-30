@@ -69,8 +69,7 @@ def main():
     n = json.load(open('data/ncbi.json'))
     hidden = open_hidden()
     pruned = remove_hidden(n, hidden)
-    thinned = remove_single(pruned)
-    json.dump(thinned, sys.stdout)
+    json.dump(pruned, sys.stdout)
 
 if __name__ == '__main__':
    main()

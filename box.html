@@ -46,50 +46,72 @@ u='data/ncbi.json'
 u='data/prune.json'
 n='data/name.json'
 x='data/extinct.json'
+r='data/rank.json'
 var BB = 2; // Border within each box.
 $.getJSON(u, function(data){
     alltree = data;
     console.log('loaded', u);
+    alltree = stripINT(alltree)
     $.getJSON(x, function(data){
         extinct = data
         $.getJSON(n, function(data){
             ncbiname = data;
             console.log('loaded', n);
             console.log(ncbiname);
-            // INT40674 mammals (class)
-            //   INT32525 Theria
-            //     INT9347 placentals
-            //       INT314145
-            //         INT91561
-            //           INT9721 Cetacea
-            //         INT33554
-            //           INT379583
-            //             INT9681 Felidae
-            //               INT338152 Felinae
-            var target = 'INT40674'
-            tree = search(alltree, target)
-            tree = remove_unwanted(tree)
-            // Not necessary for box presentation.
-            levels(tree, 0, 0)
-            leaves(tree)
-            var bigbox = [1600, 1200]
-            if(target == 'INT9681') {
-                bigbox = [400,200]
-                BB = 10
-            }
-            boxes(tree, bigbox[0], bigbox[1])
-            // treedraw(tree)
-            boxdraw(tree)
-            $('path.Equus').css('fill', 'url(#zebra)')
-            $('path.Leopardus').css('fill', 'url(#ocelot)')
-            $('path.Giraffa').css('fill', 'url(#giraffe)')
-            // $('svg').draggable()
-            $('.interior').mouseenter(function(){
-              console.log(seekName($(this).attr('taxid')))
+            $.getJSON(r, function(data){
+                rank = data
+                doStuff()
             })
         })
     })
 })
+doStuff = function()
+{
+    // INT40674 mammals (class)
+    //   INT32525 Theria
+    //     INT9347 placentals
+    //       INT314145
+    //         INT91561
+    //           INT9721 Cetacea
+    //         INT33554
+    //           INT379583
+    //             INT9681 Felidae
+    //               INT338152 Felinae
+    var target = '40674'
+    tree = search(alltree, target)
+    tree = remove_unwanted(tree)
+    // Not necessary for box presentation.
+    levels(tree, 0, 0)
+    leaves(tree)
+    var bigbox = [1189, 1682]
+    if(target == 'INT9681') {
+        bigbox = [400,200]
+        BB = 10
+    }
+    boxes(tree, bigbox[0], bigbox[1])
+    // treedraw(tree)
+    boxdraw(tree)
+    $('path.Equus').css('fill', 'url(#zebra)')
+    $('path.Leopardus').css('fill', 'url(#ocelot)')
+    $('path.Giraffa').css('fill', 'url(#giraffe)')
+    $('path.order').css('stroke-width', '2').css('stroke', 'black')
+    // $('svg').draggable()
+    $('.interior').mouseenter(function(){
+      console.log(seekName($(this).attr('taxid')))
+    })
+}
+
+stripINT = function(t)
+{
+    t.name = t.name.replace(/^INT/,'')
+    if(!t.children) {
+        return t
+    }
+    $(t.children).each(function(i,c){
+        stripINT(c)
+    })
+    return t
+}
 
 // Remove the nodes in t that have no name, and those whose
 // name contains 'environmental samples'.
@@ -404,6 +426,9 @@ boxdrawr = function(t, selector, x, y) {
     var class_ = seekName(t.name);
     if(t.outofspace) {
         class_ += ' outofspace'
+    }
+    if(rank[t.name]) {
+        class_ += ' ' + rank[t.name]
     }
     path = svg('path', {class:class_, d:d, taxid:t.name})
     t.x = x
