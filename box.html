@@ -67,16 +67,24 @@ $.getJSON(u, function(data){
 })
 doStuff = function()
 {
-    // INT40674 mammals (class)
-    //   INT32525 Theria
-    //     INT9347 placentals
-    //       INT314145
-    //         INT91561
-    //           INT9721 Cetacea
-    //         INT33554
-    //           INT379583
-    //             INT9681 Felidae
-    //               INT338152 Felinae
+    // 40674 mammals (class)
+    //   32525 Theria
+    //     9347 placentals
+    //       314145
+    //         91561
+    //           9721 Cetacea
+    //         33554
+    //           379583
+    //             9681 Felidae (family)
+    //               338152 Felinae
+    //               ...
+    //       314146
+    //         314147
+    //           9899 Rodentia (order)
+    //             33553
+    //               337687
+    //                 10066 Muridae (family)
+    //                   39107 Murinae
     var target = '40674'
     tree = search(alltree, target)
     tree = remove_unwanted(tree)
@@ -84,9 +92,12 @@ doStuff = function()
     levels(tree, 0, 0)
     leaves(tree)
     var bigbox = [1189, 1682]
-    if(target == 'INT9681') {
+    if(target == '9681') {
         bigbox = [400,200]
         BB = 10
+    }
+    if(target == '39107') {
+        bigbox = [400,280]
     }
     boxes(tree, bigbox[0], bigbox[1])
     // treedraw(tree)
@@ -164,6 +175,7 @@ leaves = function(t) {
 // Which actually looks kinda cool.
 // Current algorithm divides each box in proportion to the
 // number of leaves under each child.
+// :todo: assign x,y in this function too.
 boxes = function(t, w /* width */, h /* height */)
 {
     var minsize = 10; // Minimum width or height for a box.
@@ -182,38 +194,17 @@ boxes = function(t, w /* width */, h /* height */)
         axis = 1
     }
     if(!split1(t, axis, [w,h])) {
-        var all1 = true; // Are all children of leaves=1?
-        $(t.children).each(function(i,c){
-            if(c.leaves != 1) {
-                all1 = false
-            }
-        })
-        if(all1) {
-            var m = 2;
-            var layout = t.layout
-            var res;
-            do {
-                t.layout = m + layout
-                res = splitm(t, m, axis, [w,h])
-                ++m
-            } while(!res && m <= 4)
-            if(!res) {
-              console.log(t.name, "not enough "+['horiz','vert'][axis])
-              t.outofspace = true
-            }
-        } else {
-          // Log the number of different .leaves in the collection
-          // of children.
-          var x = {}
-          var s = []
-          var k
-          $(t.children).each(function(i,c){
-              x[c.leaves] = true
-          })
-          for(k in x) {
-              s = s.concat([k])
-          }
-          console.log("child sizes "+s, "node", t)
+        var m = 2;
+        var layout = t.layout
+        var res;
+        do {
+            t.layout = m + layout
+            res = splitm(t, m, axis, [w,h])
+            ++m
+        } while(!res && m <= 4)
+        if(!res) {
+          console.log(t.name, "not enough "+['horiz','vert'][axis])
+          t.outofspace = true
         }
         t.size = [w,h]
     } else {
@@ -241,17 +232,32 @@ split1 = function(t, axis, dimension)
 }
 // Split the box into *m*, with cuts parallel to *axis*, then split
 // again to allocate space for the children.
+// We use 'row' in this function to mean the sequence parellel
+// to *axis*, which may be either vertical or horizontal.  There
+// are *m* rows.
 splitm = function(t, m, axis, dimension)
 {
-    var n = m*Math.ceil(t.children.length/m)
+    // *n* leaves in each of *m* rows.
+    var n = Math.ceil(t.leaves/m)
     var j;
     var res = true;
     // Allocate space for each 'row'.  Tricky.
     var dim = dimension.slice()
     dim[1-axis] = (dimension[1-axis]-(m+1)*BB)/m + 2*BB
+    // Index into t.children array.
+    var i = 0;
     for(j=0; m>j; ++j) {
-        var sl = t.children.slice(n*j/m, n*(j+1)/m)
-        while(sl.length < n/m) {
+        // Count, so far, of leaves in this row.
+        var c = 0;
+        var rowstart = i;
+        do {
+            c += t.children[i].leaves
+            ++i
+        } while(i < t.children.length && c < n)
+        // :todo: when c > n, consider whether to put
+        // last child in this row or next row.
+        var sl = t.children.slice(rowstart, i)
+        while(sl.length < n) {
             // fake child to insert a blank space
             sl = sl.concat([{leaves:1, fake:true}])
         }
