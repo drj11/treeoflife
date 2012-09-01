@@ -1,3 +1,20 @@
+## Miscellaneous ##
+
+Common Names for Genera.
+
+[MSW3] has common names for species, but not (that I've found)
+for genera.  For monotypic genera we can use the common names of
+the species.  The type species is given for each genera, maybe
+that is useful.
+
+This is annoying.  *Lepus* clearly have the common name Hares,
+but I can't find a database that has that.  Perhaps the whole
+thing is fruitless.  *Lepus* includes species with common name
+jackrabbit, and excludes species with common name hare
+(*Caprolagus hispidus* and *Pronolagus spp*).
+
+## Data sources ##
+
 tol.xml from 
 
 ncbi from
@@ -5,6 +22,8 @@ http://itol.embl.de/ncbi_tree/ncbi_complete_with_taxIDs.newick.gz
 (in newick format)
 
 dump from ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump*
+
+## Images ##
 
 zebracrop.jpg from
 http://en.wikipedia.org/wiki/File:Zebra_running_Ngorongoro.jpg
@@ -14,3 +33,9 @@ http://commons.wikimedia.org/wiki/File:Ocelot_(Leopardus_pardalis)_-Belize_Zoo-6
 
 giraffecrop.jpg from
 http://en.wikipedia.org/wiki/File:Giraffe_Ithala_KZN_South_Africa_Luca_Galuzzi_2004.JPG
+
+## References ##
+
+[MSW3] "Mammal Species of the World"; Wilson & Reeder; Third
+Edition; Bucknell University;
+http://www.bucknell.edu/msw3/browse.asp?id=13500254
