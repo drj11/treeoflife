@@ -17,7 +17,7 @@ text {
   fill: black;
   stroke: none;
   font-family: Verdana, sans-serif;
-  font-size: 12px;
+  font-size: 10px;
 }
 text.leaf {
   font-size: 10px;
@@ -92,6 +92,9 @@ doStuff = function()
     levels(tree, 0, 0)
     leaves(tree)
     var bigbox = [1189, 1682]
+    var z = 1.25 // [1189,1682]*1.25 is good for A3
+    bigbox[0] *= z
+    bigbox[1] *= z
     if(target == '9681') {
         bigbox = [400,200]
         BB = 10
@@ -110,6 +113,8 @@ doStuff = function()
     $('.interior').mouseenter(function(){
       console.log(seekName($(this).attr('taxid')))
     })
+    namelist=$('path.genus').map(function(i,p){
+      return $(p).attr('class').replace(' genus','')})
 }
 
 stripINT = function(t)
@@ -501,21 +506,115 @@ labelBox = function(t)
     var w,h;
     w = t.size[0]
     h = t.size[1]
+    var tries = 0
     var name = seekName(t.name);
-    if(h >= 10 && w >= 30) {
-        text = svg('text',
-            { class: 'leaf', x:t.x+1, y:t.y+h-2} )
-    } else if(h >= 20 && w >= 10) {
-        text = svg('text',
-            { class: 'leaf',
-              transform: 'translate('+(t.x+w-2)+','+(t.y+h-1)+
-                ') rotate(-90)',
-              x:0, y:0 })
+    var axis
+
+    do {
+        if(text) {
+            $(text).remove()
+        }
+        axis = undefined
+        if(h >= 10 && w >= 30) {
+            // Horizontal.
+            axis = 0
+            text = textInBox(name, [w,h])
+            $(text).attr('transform',
+              'translate('+t.x+','+(t.y+h)+')')
+        } else if(h >= 20 && w >= 10) {
+            // Text rotated into vertical orientation.
+            axis = 1
+            text = textInBox(name, [h,w])
+            $(text).attr('transform',
+              'translate('+(t.x+w)+','+(t.y+h)+') rotate(-90)')
+        }
+        if(text) {
+            $('.port').append(text)
+        }
+        var r = text.getBoundingClientRect()
+        var b = [r.width, r.height]
+        tries += 1
+        fits = b[axis] < t.size[axis]
+        name = splitwords(name, t.size[axis])
+    } while(!fits && tries < 2)
+    if(!fits) {
+        console.log('try', tries, name)
     }
-    if(text) {
-        $(text).append(name)
-        $('.port').append(text)
+}
+
+// Try and render the text, horizontally, in the box [w,h].
+textInBox = function(text, box)
+{
+    var l = text.split(/\n/)
+    var n = l.length
+    var pitch = 10
+    var r = n-1;
+    els = l.map(function(t){
+      var el = svg('text', {x:1, y:(-r)*pitch-1})
+      $(el).append(t)
+      r -= 1
+      return el
+    })
+    var g = svg('g')
+    $(els).each(function(i,el){
+        $(g).append(el)
+    })
+    return g
+}
+// Try and split the text.
+splitwords = function(text, w)
+{
+    var t
+    var rel = [
+        // Example: Homo-therium
+        /(?=ther)/,
+        // Phasco-murexia
+        /(?=murexia)/,
+        // Mio-pithecus
+        /(?=pithec)/,
+        // Ommato-phoca
+        /(?=phoca)/,
+        // Paran-techinus
+        /(?=techinus)/,
+        // Lopho-cebus
+        /(?=cebus$)/,
+        // Arcto-cephalus
+        /(?=cephalus$)/,
+        // Tasma-cetus
+        /(?=cetus$)/,
+        // Rhinoni-cteris
+        /(?=cteris$)/,
+        // Rhyncho-cyon
+        /(?=cyon$)/,
+        // Lisso-delphis
+        /(?=delphis$)/,
+        // Orycto-lagus
+        /(?=lagus$)/,
+        // Hapa-lemur
+        /(?=lemur$)/,
+        // Rhombo-mys
+        /(?=mys$)/,
+        // Caloprym-nus
+        /(?=nus$)/,
+        // Glir-onia
+        /(?=onia$)/,
+        // Mormo-pterus
+        /(?=pterus$)/,
+        // Lageno-rhynchus
+        /(?=rhynchus$)/,
+        // Allocricet-ulus
+        /(?=ulus$)/,
+        // Paradoxurus
+        /(?=urus$)/,
+    ]
+
+    for(i in rel) {
+        t = text.replace(rel[i], '-\n')
+        if(t != text) {
+            return t
+        }
     }
+    return text
 }
 
 // Create DOM element in SVG namespace
