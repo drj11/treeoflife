@@ -140,6 +140,10 @@ remove_unwanted = function(t)
       ncbiname[id].scientific.match(/environmental +samples/) ||
       ncbiname[id].scientific.match(/^unclassified\b/))
     {
+        /* :todo: consider only removing "unclassified" where
+           there are no genus descendents (for example,
+           "unclassified Felidae >> Homotherium").
+         */
         return null
     }
     if(!t.children) {
