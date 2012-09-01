@@ -67,6 +67,7 @@ $.getJSON(u, function(data){
 })
 doStuff = function()
 {
+    // 7586 echinoderms (phylum)
     // 40674 mammals (class)
     //   32525 Theria
     //     9347 placentals
@@ -93,6 +94,7 @@ doStuff = function()
     leaves(tree)
     var bigbox = [1189, 1682]
     var z = 1.25 // [1189,1682]*1.25 is good for A3
+    z = 1
     bigbox[0] *= z
     bigbox[1] *= z
     if(target == '9681') {
@@ -135,7 +137,8 @@ remove_unwanted = function(t)
 {
     var id = t.name.replace(/^INT/,'')
     if(!ncbiname[id] ||
-      ncbiname[id].scientific.match(/environmental +samples/))
+      ncbiname[id].scientific.match(/environmental +samples/) ||
+      ncbiname[id].scientific.match(/^unclassified\b/))
     {
         return null
     }
