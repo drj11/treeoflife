@@ -99,7 +99,7 @@ doStuff = function()
     if(target == '39107') {
         bigbox = [400,280]
     }
-    boxes(tree, bigbox[0], bigbox[1])
+    boxes(tree, [0,0], bigbox)
     // treedraw(tree)
     boxdraw(tree)
     $('path.Equus').css('fill', 'url(#zebra)')
@@ -171,49 +171,51 @@ leaves = function(t) {
 // Sibling boxes do not overlap.
 // Each node has a .size attribute written to it, where .size =
 // [ width, height ].
+// And a .pos attribute, where .pos = [x,y].
 // Old-style divided each box equally amongst the children.
 // Which actually looks kinda cool.
 // Current algorithm divides each box in proportion to the
 // number of leaves under each child.
 // :todo: assign x,y in this function too.
-boxes = function(t, w /* width */, h /* height */)
+boxes = function(t, o /* origin [x,y] */, box /* [width, height] */)
 {
     var minsize = 10; // Minimum width or height for a box.
+    t.pos = o.slice()
     if(!t.children) {
-        w = Math.max(minsize, w)
-        h = Math.max(minsize, h)
+        var w = Math.max(minsize, box[0])
+        var h = Math.max(minsize, box[1])
         t.size = [w, h]
         return
     }
     var axis;
-    if(w>=h) {
+    if(box[0]>=box[1]) {
         t.layout = 'horiz'
         axis = 0
     } else {
         t.layout = 'vert'
         axis = 1
     }
-    if(!split1(t, axis, [w,h])) {
+    if(!split1(t, axis, o, box)) {
         var m = 2;
         var layout = t.layout
         var res;
         do {
             t.layout = m + layout
-            res = splitm(t, m, axis, [w,h])
+            res = splitm(t, m, axis, o, box)
             ++m
         } while(!res && m <= 4)
         if(!res) {
           console.log(t.name, "not enough "+['horiz','vert'][axis])
           t.outofspace = true
         }
-        t.size = [w,h]
+        t.size = box.slice()
     } else {
         // Allow box to stretch in the other dimension to *axis*.
         // Slightly nasty in that it just assumes 2 axes.
         var maxd = Array.max(t.children.map(function(x){
             return x.size[1-axis]}))
         t.size = [maxd + 2*BB, maxd + 2*BB]
-        t.size[axis] = [w,h][axis]
+        t.size[axis] = box[axis]
     }
 }
 
@@ -222,20 +224,22 @@ boxes = function(t, w /* width */, h /* height */)
 // the box, [w,h].  After returning, each element of t.children
 // will have a .size attribute.  Returns true if there was
 // enough space, but false if there was not enough space.
-split1 = function(t, axis, dimension)
+split1 = function(t, axis, o, dimension)
 {
     // Sort children in increasing order (of leaf count).
+    // This also draws them in the same sequence, which is
+    // different from how it used to be.
     var sl = t.children.concat().sort(function(a,b){
         return a.leaves - b.leaves;
     })
-    return split1list(t, sl, axis, dimension)
+    return split1list(sl, axis, o, dimension)
 }
 // Split the box into *m*, with cuts parallel to *axis*, then split
 // again to allocate space for the children.
 // We use 'row' in this function to mean the sequence parellel
 // to *axis*, which may be either vertical or horizontal.  There
 // are *m* rows.
-splitm = function(t, m, axis, dimension)
+splitm = function(t, m, axis, o, dimension)
 {
     // *n* leaves in each of *m* rows.
     var n = Math.ceil(t.leaves/m)
@@ -261,19 +265,28 @@ splitm = function(t, m, axis, dimension)
             // fake child to insert a blank space
             sl = sl.concat([{leaves:1, fake:true}])
         }
-        if(!split1list(t, sl, axis, dim)) {
+        // Row origin.
+        var ro = o.slice()
+        ro[1-axis] += j*(dim[1-axis] - BB)
+        if(!split1list(sl, axis, ro, dim)) {
             res = false
         }
     }
     return res
 }
-split1list = function(t, inorder, axis, dimension)
+split1list = function(inorder, axis, o, dimension)
 {
+    // Total number of leaves in children (including
+    // space-filling fake boxes).
     var leaves = inorder.reduce(function(a,b){
         return a+b.leaves}, 0)
     var space;
     var n = inorder.length;
 
+    // child origin
+    var co = o.slice()
+    co[0] += BB
+    co[1] += BB
     // Split along axis *axis* (0: horizontal, 1: vertical).
     space = dimension[axis] - (n+1)*BB
     $(inorder).each(function(i,c){
@@ -290,9 +303,10 @@ split1list = function(t, inorder, axis, dimension)
                 childbox[i] -= 2*BB
             }
         })
-        boxes(c, childbox[0], childbox[1])
+        boxes(c, co, childbox)
         space -= c.size[axis]
         leaves -= c.leaves
+        co[axis] += c.size[axis] + BB
     })
     if(0 > space) {
         return false
@@ -435,6 +449,8 @@ boxdraw = function(t, selector)
 boxdrawr = function(t, selector, x, y) {
     var w = t.size[0];
     var h = t.size[1];
+    x = t.pos[0];
+    y = t.pos[1];
     var d = 'M'+x+' '+y+'v'+h+'h'+w+'V'+y+'z';
     var path;
     var class_ = seekName(t.name);
