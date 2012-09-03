@@ -12,35 +12,77 @@ class Error(Exception):
 # Example URL
 wikibase = 'http://species.wikimedia.org/w/index.php'
 
-def CommonName(title):
-    """Get the (english) common name; we expect *title* to be a
-    genus."""
+def getInfo(title):
+    """From a title (species or genus), get a variety of
+    information: the (english) common name; list of species.
+    """
+
+    res = {}
 
     q = urllib.urlencode(dict(action='raw', title=title))
     url = "%s?%s" % (wikibase, q)
-    section = ''.join(vernacular(urllib.urlopen(url))).replace('\n','')
+    body = urllib.urlopen(url).readlines()
+
+    res['vernacular'] = vernacular(body)
+
+    res.update(species(body))
+
+def species(body):
+    """Extract species.  A dict is returned with a list of
+    extant species in the key 'extant', and a list of extinct
+    species in the key 'extinct'.
+    """
+
+    res = dict(extant=[], extinct=[])
+
+    ssection = [line for line in section('Taxonavigation', body)
+      if line.startswith('Species')]
+    # This has to be unicode to find the \u2020 (dagger)
+    # character, but I have no idea if it is.
+    for specie in itertools.chain(
+      *(re.findall(r'[^\s]?{{.*?}}', line) for line in ssection)):
+        if specie.startswith('{{'):
+            l = d['extant']
+        else:
+            l = d['extinct']
+        # By examination of one example (Macrotis), the text between
+        # the {{ }} appears to be:
+        # {{sp|M|acrotis|lagotis}}
+        t = re.search('{{sp.*?[|](|(.*)}}', specie).group(1)
+        s = t.replace('|', '', 1).replace('|', ' ')
+        l.append(s)
+    return res
+
+def vernacular(body):
+    """Extract (english) vernacular, common name.  A list is
+    returned (which is empty when there are no common names).
+    """
+    vsection = ''.join(section('Vernacular', body)).replace('\n','')
     m = re.search(r'{{(.*)}}', section)
     if not m:
-        raise Error("Not found")
-    s = m.group(1)
-    l = s.split('|')
-    return [re.sub(r'^en=', '', x) for x in l if x.startswith('en')]
+        v = []
+    else:
+        s = m.group(1)
+        l = s.split('|')
+        v = [re.sub(r'^en=', '', x) for x in l if x.startswith('en')]
 
-def vernacular(f):
+def section(name, f):
     """Given a sequence of lines, yield only those in the
-    vernacular section.
+    section named *name*.
     """
+
+    f = iter(f)
 
     while True:
         l = f.next()
-        if 'Vernacular' in l:
+        if l.startswith('=') and name in l:
             yield l
             break
     while True:
         l = f.next()
-        yield l
-        if '}}' in l:
+        if l.startswith('='):
             break
+        yield l
 
 def main(argv=None):
     import sys
