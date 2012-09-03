@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # David Jones - drj@climatecode.org
 
-
 # Uses PLY: http://www.dabeaz.com/ply/README.txt
 # Parses Newick format: http://en.wikipedia.org/wiki/Newick_format
 
@@ -80,8 +79,16 @@ def p_error(p):
 import ply.yacc as yacc
 yacc.yacc()
 
-print yacc.parse('(,,(,));')
-import gzip
-s = gzip.GzipFile('ncbi_complete_with_taxIDs.newick.gz').read()
-# Takes about 1 minute
-print yacc.parse(s)
+assert yacc.parse('(,,(,));')
+
+def main():
+    import gzip
+    import json
+    import sys
+
+    s = gzip.GzipFile('data/ncbi_complete_with_taxIDs.newick.gz').read()
+    # Takes about 1 minute
+    json.dump(yacc.parse(s), sys.stdout)
+
+if __name__ == '__main__':
+    main()
