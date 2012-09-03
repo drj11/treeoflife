@@ -41,8 +41,7 @@ Array.min = function( array ){
 };
 
 $(function() {
-u='http://localhost:8000/';
-u='data/prune.json'
+u='data/ncbi.json'
 n='data/name.json'
 x='data/extinct.json'
 r='data/rank.json'
@@ -130,8 +129,12 @@ stripINT = function(t)
     return t
 }
 
-// Remove the nodes in t that have no name, and those whose
-// name contains 'environmental samples'.
+// Remove various unwanted groups of nodes:
+// nodes that have no name;
+// nodes whose name contains 'environmental samples';
+// nodes whose name contains 'unclassified' [1];
+// all children of genera.
+// [1] This sometimes removes genera (eg Homotherium), reconsider.
 remove_unwanted = function(t)
 {
     var id = t.name.replace(/^INT/,'')
@@ -145,7 +148,14 @@ remove_unwanted = function(t)
          */
         return null
     }
+    if(rank[t.name] == 'species') {
+        return null
+    }
     if(!t.children) {
+        return t
+    }
+    if(rank[t.name] == 'genus') {
+        delete t.children
         return t
     }
     var children = []
