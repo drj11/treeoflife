@@ -572,9 +572,13 @@ textInBox = function(text, box)
 splitwords = function(text, w)
 {
     var t
+
+    if(text.match(/ /)) {
+       return text.replace(/ /, '\n')
+    }
     var rel = [
         // Example: Homo-therium
-        /(?=ther)/,
+        /(?=ther[aeiou])/,
         // Phasco-murexia
         /(?=murexia)/,
         // Mio-pithecus
@@ -599,6 +603,8 @@ splitwords = function(text, w)
         /(?=lagus$)/,
         // Hapa-lemur
         /(?=lemur$)/,
+        // Petrodro-mus
+        /(?=mus$)/,
         // Rhombo-mys
         /(?=mys$)/,
         // Caloprym-nus
