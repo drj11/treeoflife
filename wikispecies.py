@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # Extracting stuff from wikispecies
 
+import itertools
 import json
 import re
 import urllib
@@ -26,6 +27,7 @@ def getInfo(title):
     res['vernacular'] = vernacular(body)
 
     res.update(species(body))
+    return res
 
 def species(body):
     """Extract species.  A dict is returned with a list of
@@ -42,13 +44,13 @@ def species(body):
     for specie in itertools.chain(
       *(re.findall(r'[^\s]?{{.*?}}', line) for line in ssection)):
         if specie.startswith('{{'):
-            l = d['extant']
+            l = res['extant']
         else:
-            l = d['extinct']
+            l = res['extinct']
         # By examination of one example (Macrotis), the text between
         # the {{ }} appears to be:
         # {{sp|M|acrotis|lagotis}}
-        t = re.search('{{sp.*?[|](|(.*)}}', specie).group(1)
+        t = re.search('{{sp.*?[|](.*)}}', specie).group(1)
         s = t.replace('|', '', 1).replace('|', ' ')
         l.append(s)
     return res
@@ -58,13 +60,13 @@ def vernacular(body):
     returned (which is empty when there are no common names).
     """
     vsection = ''.join(section('Vernacular', body)).replace('\n','')
-    m = re.search(r'{{(.*)}}', section)
+    m = re.search(r'{{(.*)}}', vsection)
     if not m:
-        v = []
-    else:
-        s = m.group(1)
-        l = s.split('|')
-        v = [re.sub(r'^en=', '', x) for x in l if x.startswith('en')]
+        return []
+    s = m.group(1)
+    l = s.split('|')
+    v = [re.sub(r'^en=', '', x) for x in l if x.startswith('en')]
+    return v
 
 def section(name, f):
     """Given a sequence of lines, yield only those in the
@@ -91,7 +93,10 @@ def main(argv=None):
     arg = argv[1:]
     for x in arg:
         try:
-            print json.dumps(CommonName(x))
+            info = getInfo(x)
+            print json.dumps(info['vernacular'])
+            if len(info['extant']) == 1:
+                print '  monotypic'
         except Error as m:
             print json.dumps(dict(error="%s: %s" % (x,m)))
 
