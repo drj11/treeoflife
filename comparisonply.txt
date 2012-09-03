@@ -1,0 +1,57 @@
+Case-study comparing hand-written parser with PLY generated parser.
+David Jones - drj@climatecode.org
+
+This case study arises naturally out of work I did to create a
+Python parser for the newick file format, which describes trees
+(often, phylogenetic trees).  First I created a parser "by hand"
+(a top-down recursive descent parser), then later I created a
+second parser, generated using PLY (which generates bottom-up
+table driven LR(1) parsers, using the LALR algorithm).
+
+The newick format is a very simply S-expression like syntax,
+described in about 5 lines of BNF grammar.
+
+For this small case study, the PLY generated parser is
+significantly slower than the recursive descent parser (2.4
+times slower), but is considerably shorter.  I think the PLY
+code is considerably clearer (as long as one has a little
+familiarity with the way PLY parsers are written).
+
+Clarity
+
+The clarity comes from the following aspects:
+  - form follows grammar;
+  - best practice is encouraged;
+  - industry standard design.
+
+The productions of the grammar appear as Python docstrings!
+Whilst from a Python perspective this is idiosyncratic, from a
+parser construction perspective it makes a lot of sense.
+Each production in the grammar corresponds to a Python function
+(the semantic action), and the production rule appears in the
+docstring.  The body of the function contains the semantic
+action (typically constructing part of a parse tree).
+
+Separate lexing and parsing phases contribute to the clarity.
+In the recursive descent parser this hasn't been done.
+Obviously the phases _could_ have been separated but the PLY
+method encourages this good practice.  Managing the lexing state
+requires a fair amount of code in the reursive descent parser
+(even though the lexer, such as it is, is really simple), and this
+has been largely eliminated in the PLY code.
+
+The design of PLY follows the design of a long traditional of
+LALR parser generators, most notably Lex and YACC.  This means
+that the concepts in the PLY code and the structure and even
+sometimes the appearance of it will already be familar to anyone
+who has created a YACC parser before (or, with some luck, only
+been told how to in a CS lecture course more than 10 years ago).
+
+Choice
+
+Given a choice, I'd probably rather not be writing parsers for
+obscure file formats.  That aside, I choose clarity.  The PLY
+parser is clearly better in this regard.  The factor of 2.4
+slowdown is annoying, but it is only an annoyance.  If speed was
+really a factor then I would choose C rather than Python (and
+I guess it would be about 100 times faster).
