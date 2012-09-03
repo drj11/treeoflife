@@ -3,39 +3,24 @@
 # Newick format:
 # http://en.wikipedia.org/wiki/Newick_format
 
-class Node:
-    def __init__(self, **k):
-        self.__dict__.update(k)
-    def __repr__(self):
-        if 'name' in self.__dict__:
-            return "Node(name=%r)" % self.name
-        return "Node(id=%r)" % id(self)
-    def asdict(self):
-        d = {}
-        l = getattr(self, 'length', None)
-        if l is not None:
-            d['length'] = l
-        if hasattr(self, 'name'):
-            d['name'] = self.name
-        if hasattr(self, 'children'):
-            d['children'] = [n.asdict() for n in self.children]
-        return d
+import json
+import sys
 
 def search(node, name):
-    if node.name == name:
+    if node['name'] == name:
         return node
-    if not hasattr(node, 'children'):
+    if 'children' not in node:
         return False
-    for n in node.children:
+    for n in node['children']:
         r = search(n, name)
         if r:
             return r
     return False
 
 def count(node):
-    if not hasattr(node, 'children'):
+    if 'children' not in node:
         return 1
-    return 1 + sum(count(n) for n in node.children)
+    return 1 + sum(count(n) for n in node['children'])
 
 class Machine:
     def __init__(self, f):
@@ -70,7 +55,7 @@ def readInternal(f):
     c = f.getc()
     assert c == ')'
     name = readOptionalName(f)
-    res = Node(children=l, name=name)
+    res = dict(children=l, name=name)
     return res
 
 def readOptionalName(f):
@@ -106,7 +91,8 @@ def readOptionalLength(f):
 def readBranch(f):
     node = readSubtree(f)
     length = readOptionalLength(f)
-    node.length = length
+    if length is not None:
+        node['length'] = length
     return node
 
 def readSubtree(f):
@@ -114,7 +100,7 @@ def readSubtree(f):
     if c == '(':
         return readInternal(f)
     name = readOptionalName(f)
-    node = Node(name=name)
+    node = dict(name=name)
     return node
 
 def readTree(f):
@@ -129,15 +115,17 @@ def astree(f):
     lex = Machine(f)
     return readTree(lex)
 
-def ncbi():
-    """Read the NCBI newick format file and return it as a tree
-    object (Node instance).
+def ncbi(name=None):
+    """Read the NCBI newick format file and return the tree as a
+    dict (with 'name' and 'children' keys).
     """
     import glob
     # http://docs.python.org/release/2.7.3/library/gzip.html
     import gzip
-    fn = glob.glob('ncbi*')[0]
-    fd = gzip.GzipFile(fn)
+
+    if name is None:
+        name = glob.glob('data/ncbi*.newick.gz')[0]
+    fd = gzip.GzipFile(name)
     global NCBITree
     NCBITree = astree(fd)
     return NCBITree
@@ -149,16 +137,16 @@ def felidae(tree):
 
 def asjson():
     """Write out the files root.json and felidae.json."""
-    import json
 
     root = ncbi()
     fel = felidae(root)
 
-    json.dump(root.asdict(), open('root.json', 'w'))
-    json.dump(fel.asdict(), open('felidae.json', 'w'))
+    json.dump(root, open('root.json', 'w'))
+    # json.dump(fel, open('felidae.json', 'w'))
 
 def main():
-    pass
+    """Create JSON file from default newick file."""
+    json.dump(ncbi(), sys.stdout)
 
 if __name__ == '__main__':
     main()
