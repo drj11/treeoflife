@@ -42,7 +42,6 @@ Array.min = function( array ){
 
 $(function() {
 u='http://localhost:8000/';
-u='data/ncbi.json'
 u='data/prune.json'
 n='data/name.json'
 x='data/extinct.json'
@@ -374,7 +373,9 @@ seekName = function(id) {
         // There Does Not Exist (funny, but looks bad)
         // r = '\u2204 ' + r
         // Black Diamond Minus White X
-        r = '\u2756 ' + r
+        // r = '\u2756 ' + r
+        // Dagger.
+        r = '\u2020' + r
     }
     return r
 }
@@ -465,6 +466,7 @@ boxdrawr = function(t, selector, x, y) {
     y = t.pos[1];
     var d = 'M'+x+' '+y+'v'+h+'h'+w+'V'+y+'z';
     var path;
+    // CSS class, not the rank.
     var class_ = seekName(t.name);
     if(t.outofspace) {
         class_ += ' outofspace'
@@ -546,6 +548,13 @@ labelBox = function(t)
     } while(!fits && tries < 2)
     if(!fits) {
         console.log('try', tries, name)
+    }
+    if(false && extinct[t.name]) {
+        var l = t.size[1-axis]
+        var t = svg('text', {x:1, y:11-l})
+        // obelisk / dagger.
+        $(t).append('\u2020')
+        $(text).append(t)
     }
 }
 
