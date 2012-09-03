@@ -50,6 +50,8 @@ def species(body):
         # By examination of one example (Macrotis), the text between
         # the {{ }} appears to be:
         # {{sp|M|acrotis|lagotis}}
+        # Oh yukh.  Completely different for Dinomys:
+        # Species: ''[[Dinomys branickii]]''
         t = re.search('{{sp.*?[|](.*)}}', specie).group(1)
         s = t.replace('|', '', 1).replace('|', ' ')
         l.append(s)
