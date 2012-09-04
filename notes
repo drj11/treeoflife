@@ -2,16 +2,17 @@
 
 Common Names for Genera.
 
-[MSW3] has common names for species, but not (that I've found)
-for genera.  For monotypic genera we can use the common names of
-the species.  The type species is given for each genera, maybe
-that is useful.
+[MSW3] has common names for species, but not for genera (I
+checked all the genera in the downloaded CSV).  For monotypic
+genera we can use the common names of the species.  The type species
+is given for each genera, maybe that is useful.
 
 This is annoying.  *Lepus* clearly have the common name Hares,
 but I can't find a database that has that.  Perhaps the whole
 thing is fruitless.  *Lepus* includes species with common name
 jackrabbit, and excludes species with common name hare
-(*Caprolagus hispidus* and *Pronolagus spp*).
+(*Caprolagus hispidus* and *Pronolagus spp*). (OTOH Lepus has
+genbank common name 'hares' in the NCBI dataset).
 
 ## Data sources ##
 
