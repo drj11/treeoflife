@@ -1,6 +1,15 @@
 #!/usr/bin/env python
+# coding:utf-8
 
 # Map Genus to species for monotypic genera.
+
+# The CSV file appears to be using Windows-1252 encoding, though
+# this is undocumented.  It is common to see a mixture of
+# \u2019 and \x27 for apostrophe.  As in "Salim Ali’s Fruit Bat"
+# and "Bulmer's Fruit Bat".
+# And just to keep you on your toes, there exists at least one species
+# with non-ascii in the specific name: Leimacomys büttneri (this species
+# does not seem to appear in the NCBI database).
 
 import codecs
 import csv
