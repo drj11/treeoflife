@@ -58,7 +58,10 @@ $.getJSON(u, function(data){
             console.log(ncbiname);
             $.getJSON(r, function(data){
                 rank = data
-                doStuff()
+                $.getJSON('data/msw-common.json', function(data){
+                    msw = data
+                    doStuff()
+                })
             })
         })
     })
@@ -355,37 +358,53 @@ search = function(t, name) {
 }
 // lookup name from taxid.
 seekName = function(id) {
+    return getNames(id).name
+}
+// Return a structure containing the names for a taxid.
+// And set .italic if the name should be rendered in an italic
+// typeface (scientific genus).
+getNames = function(id) {
     var n;
-    var r;
+    var r = {};
     if(id.match(/^INT/)) {
         id = id.slice(3)
     }
-    // 2204
     n = ncbiname[id]
     if(!n) {
-        r = 'Noname taxid ' + id
-    } else if(n.genbank) {
-        r = n.genbank
-    } else if(n.common) {
-        r = n.common
-    } else if(n.scientific) {
+        r.name = 'Noname taxid ' + id
+        return
+    }
+    if(n.genbank) {
+        r.genbank = n.genbank
+    }
+    if(n.common) {
+        r.common = n.common
+    }
+    if(n.scientific) {
         if(n.scientific.match(/environmental +samples/)) {
             console.log('environmental samples', id)
         }
-        r = n.scientific
+        r.scientific = n.scientific
+        if(msw[r.scientific] && !r.common) {
+            r.common = msw[r.scientific].vernacular
+        }
     }
-    if(!r) {
-        r = 'Noname taxid ' + id
+    r.name = r.common || r.genbank || r.scientific
+    if(!r.name) {
+        r.name = 'Noname taxid ' + id
     }
     // r = r.replace(/^unclassified/, '\u2316')
-    r = r.replace(/^unclassified/, '?')
+    r.name = r.name.replace(/^unclassified/, '?')
     if(extinct[id]) {
         // There Does Not Exist (funny, but looks bad)
         // r = '\u2204 ' + r
         // Black Diamond Minus White X
         // r = '\u2756 ' + r
         // Dagger.
-        r = '\u2020' + r
+        r.name = '\u2020' + r.name
+    }
+    if(r.name == r.scientific) {
+        r.italic = true
     }
     return r
 }
@@ -526,7 +545,9 @@ labelBox = function(t)
     w = t.size[0]
     h = t.size[1]
     var tries = 0
-    var name = seekName(t.name);
+    var names = getNames(t.name);
+    var name = names.name
+    var italic = names.italic
     var axis
 
     do {
@@ -557,7 +578,7 @@ labelBox = function(t)
         name = splitwords(name, t.size[axis])
     } while(!fits && tries < 2)
     if(!fits) {
-        console.log('try', tries, name)
+        // console.log('try', tries, name)
     }
     if(false && extinct[t.name]) {
         var l = t.size[1-axis]
