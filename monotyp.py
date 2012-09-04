@@ -11,14 +11,13 @@
 # with non-ascii in the specific name: Leimacomys büttneri (this species
 # does not seem to appear in the NCBI database).
 
-import codecs
 import csv
 import itertools
+import json
 import sys
 
-sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
-
 def main():
+    res = {}
     r = csv.reader(open('data/msw3-all.csv'))
     header = r.next()
     dicts = (dict(zip(header, row)) for row in r)
@@ -33,7 +32,8 @@ def main():
             cn = unicode(x['CommonName'], 'windows-1252')
             g = unicode(x['Genus'], 'windows-1252')
             s = unicode(x['Species'], 'windows-1252')
-            print g, s, cn
+            res[g] = dict(species=s, vernacular=cn)
+    json.dump(res, sys.stdout)
 
 if __name__ == '__main__':
     main()
