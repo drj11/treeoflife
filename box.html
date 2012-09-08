@@ -32,6 +32,12 @@ path {
 }
 </style>
 <script>
+/*
+    REFERENCES
+
+    [SQUARIFY] "Squarified Treemaps"; Mark Bruls, Kees Huizing, Jarke J. van Wijk; 2000-04
+*/
+
 // http://ejohn.org/blog/fast-javascript-maxmin/
 Array.max = function( array ){
     return Math.max.apply( Math, array );
@@ -190,17 +196,14 @@ leaves = function(t) {
     t.leaves = l
     return t
 }
-// Allocate width and height for a box for each node in the tree.
+// Allocate position and size for a box for each node in the tree.
 // A node's box nests all of its children's boxes.
 // Sibling boxes do not overlap.
 // Each node has a .size attribute written to it, where .size =
 // [ width, height ].
 // And a .pos attribute, where .pos = [x,y].
-// Old-style divided each box equally amongst the children.
-// Which actually looks kinda cool.
 // Current algorithm divides each box in proportion to the
 // number of leaves under each child.
-// :todo: assign x,y in this function too.
 boxes = function(t, o /* origin [x,y] */, box /* [width, height] */)
 {
     var minsize = 10; // Minimum width or height for a box.
