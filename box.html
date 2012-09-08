@@ -587,6 +587,9 @@ labelBox = function(t)
         $(t).append('\u2020')
         $(text).append(t)
     }
+    if(italic) {
+        $(text).css('font-style', 'italic')
+    }
 }
 
 // Try and render the text, horizontally, in the box [w,h].
