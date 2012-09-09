@@ -272,28 +272,24 @@ squarify = function(t, o, box)
 sq = function(node, children, o, box)
 {
     var axis = Number(box[1] > box[0])
-    if(children.length == 0) {
-        console.log("sq no children", node, node.name, seekName(node.name))
-    }
-    if(children.length > 0) {
-        var row = []
-        var ss = children.reduce(function(x,y){return x+y.leaves}, 0)
-        var af = box[0]*box[1]/ss; // Area Factor
-        var w = box[1-axis]
-        do {
-            var c = children[0]
-            if(worst(row, w, af) <= worst(row.concat([c]), w, af)) {
-                break
-            }
-            children = children.slice(1)
-            row = row.concat([c])
-        } while(children.length > 0);
-    }
-    if(row.length > 0) {
-        var r = layout(node, children, row, axis, o, box)
-        o = r[0]
-        box = r[1]
-    }
+    var row = []
+    var ss = children.reduce(function(x,y){return x+y.leaves}, 0)
+    var af = box[0]*box[1]/ss; // Area Factor
+    var w = box[1-axis]
+    do {
+        var c = children[0]
+        if(worst(row, w, af) <= worst(row.concat([c]), w, af)) {
+            break
+        }
+        children = children.slice(1)
+        row = row.concat([c])
+    } while(children.length > 0);
+
+    var r = layout(node, children, row, axis, o, box)
+    o = r[0]
+    box = r[1]
+
+    // Handle remaining children in remaining space.
     if(children.length > 0) {
         return sq(node, children, o, box)
     }
