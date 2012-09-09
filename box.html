@@ -261,7 +261,6 @@ squarify = function(t, o, box)
 {
     t.size = box.slice()
     t.pos = o.slice()
-    console.log("squarify", t, t.name, seekName(t.name), String(o), box)
     if(t.children) {
         return sq(t, t.children, o, box)
     }
@@ -331,7 +330,6 @@ layout = function(node, rest, row, axis, o, box)
     // Each subbox will be length *p* along the axis *axis*.
     var p = s*box[axis]/ss
     var co = o.slice()
-    console.log("layout", axis, seekName(node.name), ss, s, String(o), String(box), w, p)
     $(row).each(function(i,c){
         var cbox = [null, null]
         cbox[axis] = p
