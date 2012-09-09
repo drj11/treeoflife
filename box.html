@@ -85,6 +85,7 @@ doStuff = function()
     //           379583
     //             9681 Felidae (family)
     //               338152 Felinae
+    //               338153 Pantherinae
     //               ...
     //       314146
     //         314147
@@ -93,7 +94,7 @@ doStuff = function()
     //               337687
     //                 10066 Muridae (family)
     //                   39107 Murinae
-    var target = '40674'
+    var target = '9681'
     tree = search(alltree, target)
     tree = remove_unwanted(tree)
     // Not necessary for box presentation.
@@ -104,7 +105,7 @@ doStuff = function()
     z = 1
     bigbox[0] *= z
     bigbox[1] *= z
-    if(target == '9681') {
+    if(target == '9681' || target == '338153') {
         bigbox = [400,200]
         BB = 10
     }
@@ -222,29 +223,127 @@ boxes = function(t, o /* origin [x,y] */, box /* [width, height] */)
         t.layout = 'vert'
         axis = 1
     }
-    if(!split1(t, axis, o, box)) {
-        var m = 2;
-        var layout = t.layout
-        var res;
-        do {
-            t.layout = m + layout
-            res = splitm(t, m, axis, o, box)
-            ++m
-        } while(!res && m <= 4)
-        if(!res) {
-          console.log(t.name, "not enough "+['horiz','vert'][axis])
-          t.outofspace = true
+    squarify(t, o, box)
+    if(false) {
+        if(!split1(t, axis, o, box)) {
+            var m = 2;
+            var layout = t.layout
+            var res;
+            do {
+                t.layout = m + layout
+                res = splitm(t, m, axis, o, box)
+                ++m
+            } while(!res && m <= 4)
+            if(!res) {
+              console.log(t.name, "not enough "+['horiz','vert'][axis])
+              t.outofspace = true
+            }
+            t.size = box.slice()
+        } else {
+            // Allow box to stretch in the other dimension to *axis*.
+            // Slightly nasty in that it just assumes 2 axes.
+            var maxd = Array.max(t.children.map(function(x){
+                return x.size[1-axis]}))
+            t.size = [maxd + 2*BB, maxd + 2*BB]
+            t.size[axis] = box[axis]
         }
-        t.size = box.slice()
-    } else {
-        // Allow box to stretch in the other dimension to *axis*.
-        // Slightly nasty in that it just assumes 2 axes.
-        var maxd = Array.max(t.children.map(function(x){
-            return x.size[1-axis]}))
-        t.size = [maxd + 2*BB, maxd + 2*BB]
-        t.size[axis] = box[axis]
     }
 }
+
+// After [SQUARIFY].
+// When axis is 0 (horizontal) the box will be split horizontally, and
+// the first few children will be allocated to a left hand subsection
+// of *box* (steps 1 and 2 of [SQUARIFY] section 3.1).
+// When axis is 1 (vertical) the box will be split vertically, and
+// the first few children will be alloated to a bottom subsection
+// of *box* (steps 4 and 5 of [SQUARIFY] section 3.1).
+squarify = function(t, o, box)
+{
+    t.size = box.slice()
+    t.pos = o.slice()
+    console.log("squarify", t, t.name, seekName(t.name), String(o), box)
+    if(t.children) {
+        return sq(t, t.children, [], o, box)
+    }
+    return null
+}
+
+sq = function(node, children, row, o, box)
+{
+    var axis = Number(box[1] > box[0])
+    if(children.length == 0) {
+        console.log("sq no children", node, node.name, seekName(node.name))
+    }
+    if(children.length > 0) {
+        var ss = (node.children.concat(row)).reduce(function(x,y){return x+y.leaves}, 0)
+        var af = box[0]*box[1]/ss; // Area Factor
+        var w = box[1-axis]
+        do {
+            var c = children[0]
+            if(worst(row, w, af) <= worst(row.concat([c]), w, af)) {
+                break
+            }
+            children = children.slice(1)
+            row = row.concat([c])
+        } while(children.length > 0);
+    }
+    if(row.length > 0) {
+        var r = layout(node, children, row, axis, o, box)
+        o = r[0]
+        box = r[1]
+    }
+    if(children.length > 0) {
+        return sq(node, children, [], o, box)
+    }
+}
+
+// *row* list of children (subset);
+// *w* dimension to be subdivided;
+// *factor* multiplier to convert .leaves into area.
+worst = function(row, w, factor)
+{
+    if(row.length == 0) {
+        return +Infinity
+    }
+    var s = row.reduce(function(x,y){return x+y.leaves}, 0)
+    s *= factor
+    return Array.max(row.map(function(t){
+        var r = t.leaves*factor
+        return Math.max(w*w*r/(s*s),s*s/(w*w*r))}))
+}
+
+// Layout a single row of children.  When axis is 0
+// box is divided horizontally and row is laid out vertically
+// in the left hand portion; when axis is 1 box is divided vertically
+// and row is laid out horizontally in the top portion.
+// *row* is the list of children to layout;
+// *rest* is the list of remaining children, to layout later.
+// *node* is only useful for logging/debugging (it is the parent that
+// contains the members of *rest* and *row*, but includes children
+// that have previously been laid out).
+layout = function(node, rest, row, axis, o, box)
+{
+    var ss = (rest.concat(row)).reduce(function(x,y){return x+y.leaves}, 0)
+    var s = row.reduce(function(x,y){return x+y.leaves}, 0)
+    var w = box[1-axis]
+    // Each subbox will be length *p* along the axis *axis*.
+    var p = s*box[axis]/ss
+    var co = o.slice()
+    console.log("layout", axis, seekName(node.name), ss, s, String(o), String(box), w, p)
+    $(row).each(function(i,c){
+        var cbox = [null, null]
+        cbox[axis] = p
+        cbox[1-axis] = c.leaves * w / s
+        squarify(c, co, cbox)
+        co[1-axis] += cbox[1-axis]
+    })
+    var ro = o.slice()
+    ro[axis] += p
+    var rbox = box.slice()
+    rbox[axis] -= p
+    return [ro,rbox]
+}
+    
 
 // Split the box along a single axis, allocating space for each
 // child (in t.children). *dimension* gives the size of
@@ -491,11 +590,11 @@ boxdraw = function(t, selector)
     $(selector).empty();
     return boxdrawr(t, selector, 0, 0)
 }
-boxdrawr = function(t, selector, x, y) {
+boxdrawr = function(t, selector) {
     var w = t.size[0];
     var h = t.size[1];
-    x = t.pos[0];
-    y = t.pos[1];
+    var x = t.pos[0];
+    var y = t.pos[1];
     var d = 'M'+x+' '+y+'v'+h+'h'+w+'V'+y+'z';
     var path;
     // CSS class, not the rank.
@@ -514,30 +613,8 @@ boxdrawr = function(t, selector, x, y) {
         labelBox(t)
         return
     }
-    x += BB;
-    y += BB;
-    var p = [x,y]
-    var origin = [x,y];
-    var n = t.children.length
-    var axis
-    if(t.layout.match(/horiz/)) {
-        axis = 0;
-    } else {
-        axis = 1;
-    }
-    var m = t.layout.match(/^\d+/)
-    var nrows = 1
-    if(m) {
-        nrows = +m[0]
-    }
-    var rowlen = Math.ceil(n/nrows)
     $(t.children).each(function(i,c){
-        boxdrawr(c, selector, p[0], p[1])
-        p[axis] += c.size[axis] + BB
-        if(Math.floor(i/rowlen) != Math.floor((i+1)/rowlen)) {
-            p[axis] = origin[axis]
-            p[1-axis] += c.size[1-axis] + BB
-        }
+        boxdrawr(c, selector)
     })
 }
 
@@ -558,13 +635,13 @@ labelBox = function(t)
             $(text).remove()
         }
         axis = undefined
-        if(h >= 10 && w >= 30) {
+        if(w >= 30 || w >= h) {
             // Horizontal.
             axis = 0
             text = textInBox(name, [w,h])
             $(text).attr('transform',
               'translate('+t.x+','+(t.y+h)+')')
-        } else if(h >= 20 && w >= 10) {
+        } else {
             // Text rotated into vertical orientation.
             axis = 1
             text = textInBox(name, [h,w])
