@@ -263,19 +263,20 @@ squarify = function(t, o, box)
     t.pos = o.slice()
     console.log("squarify", t, t.name, seekName(t.name), String(o), box)
     if(t.children) {
-        return sq(t, t.children, [], o, box)
+        return sq(t, t.children, o, box)
     }
     return null
 }
 
-sq = function(node, children, row, o, box)
+sq = function(node, children, o, box)
 {
     var axis = Number(box[1] > box[0])
     if(children.length == 0) {
         console.log("sq no children", node, node.name, seekName(node.name))
     }
     if(children.length > 0) {
-        var ss = (node.children.concat(row)).reduce(function(x,y){return x+y.leaves}, 0)
+        var row = []
+        var ss = node.children.reduce(function(x,y){return x+y.leaves}, 0)
         var af = box[0]*box[1]/ss; // Area Factor
         var w = box[1-axis]
         do {
@@ -293,7 +294,7 @@ sq = function(node, children, row, o, box)
         box = r[1]
     }
     if(children.length > 0) {
-        return sq(node, children, [], o, box)
+        return sq(node, children, o, box)
     }
 }
 
