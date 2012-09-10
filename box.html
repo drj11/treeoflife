@@ -81,12 +81,13 @@ doStuff = function()
     //       314145
     //         91561
     //           9721 Cetacea
-    //         33554
+    //         33554 Carnivora (order)
     //           379583
     //             9681 Felidae (family)
     //               338152 Felinae
     //               338153 Pantherinae
-    //               ...
+    //           379584
+    //             9655 Mustelidae (family)
     //       314146
     //         314147
     //           9899 Rodentia (order)
@@ -105,7 +106,7 @@ doStuff = function()
     z = 1
     bigbox[0] *= z
     bigbox[1] *= z
-    if(target == '9681' || target == '338153') {
+    if(target == '9681' || target == '338153' || target == '9655') {
         bigbox = [400,200]
         BB = 10
     }
@@ -263,18 +264,28 @@ squarify = function(t, o, box)
     t.size = box.slice()
     t.pos = o.slice()
     if(t.children) {
-        if(!t.children[0].children) {
-            o = [o[0]+BB, o[1]+BB]
-            box = [box[0]-2*BB,box[1]-2*BB]
+        var bb = 0;
+        // Parent of groups containing leaves (usually a family
+        // when the leaves are genus).  Probably not quite the correct
+        // test as some orders directly contain a family that directly
+        // contains a genus (for example Nandinia).  There are also
+        // other families that do not contain subfamilies.
+        if(t.children[0].children && !t.children[0].children[0].children) {
+            bb = BB
         }
-        return sq(t, t.children, o, box)
+        return sq(t, t.children, o, box, bb)
     }
     return null
 }
 
 // *node* should only be used for logging/debugging.
-sq = function(node, children, o, box)
+// *bb* is the required border, which should be removed
+// from the area allocated by *box*.
+sq = function(node, children, o, box, bb)
 {
+    // Remove top and left borders.
+    o = [o[0]+bb, o[1]+bb]
+    box = [box[0]-bb, box[1]-bb]
     var axis = Number(box[1] > box[0])
     var row = []
     var ss = children.reduce(function(x,y){return x+y.leaves}, 0)
@@ -289,13 +300,19 @@ sq = function(node, children, o, box)
         row = row.concat([c])
     } while(children.length > 0);
 
-    var r = layout(node, children, row, axis, o, box)
+    var r = layout(node, children, row, axis, o, box, bb)
     o = r[0]
     box = r[1]
 
     // Handle remaining children in remaining space.
     if(children.length > 0) {
-        return sq(node, children, o, box)
+        // Add back in top border, which will be removed
+        // by this recursive callee.
+        o = o.slice()
+        o[1-axis] -= bb
+        box = box.slice()
+        box[1-axis] += bb
+        return sq(node, children, o, box, bb)
     }
 }
 
@@ -323,20 +340,23 @@ worst = function(row, w, factor)
 // *node* is only useful for logging/debugging (it is the parent that
 // contains the members of *rest* and *row*, but includes children
 // that have previously been laid out).
-layout = function(node, rest, row, axis, o, box)
+// *bb* is a border to include between each box and on the right and
+// bottom sides of the group.
+layout = function(node, rest, row, axis, o, box, bb)
 {
     var ss = (rest.concat(row)).reduce(function(x,y){return x+y.leaves}, 0)
     var s = row.reduce(function(x,y){return x+y.leaves}, 0)
     var w = box[1-axis]
-    // Each subbox will be length *p* along the axis *axis*.
-    var p = s*box[axis]/ss
+    // Each subbox will be length *p* along the axis *axis*,
+    // leaving a border of *bb* to its right/bottom.
+    var p = s*box[axis]/ss - bb
     var co = o.slice()
     $(row).each(function(i,c){
         var cbox = [null, null]
         cbox[axis] = p
-        cbox[1-axis] = c.leaves * w / s
+        cbox[1-axis] = (c.leaves * w / s) - bb
         squarify(c, co, cbox)
-        co[1-axis] += cbox[1-axis]
+        co[1-axis] += cbox[1-axis] + bb
     })
     var ro = o.slice()
     ro[axis] += p
