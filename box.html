@@ -100,7 +100,7 @@ doStuff = function()
     tree = remove_unwanted(tree)
     // Not necessary for box presentation.
     levels(tree, 0, 0)
-    leaves(tree)
+    decorateWeight(tree)
     var bigbox = [1189, 1682]
     var z = 1.25 // [1189,1682]*1.25 is good for A3
     z = 1
@@ -120,7 +120,7 @@ doStuff = function()
     $('path.Leopardus').css('fill', 'url(#ocelot)')
     $('path.Giraffa').css('fill', 'url(#giraffe)')
     $('path.order').css('stroke-width', '2').css('stroke', 'black')
-    $('path.family').css('stroke', 'red').css('stroke-width', 1.4)
+    $('path.family').css('stroke', 'red').css('stroke-width', 1.2)
     // $('svg').draggable()
     $('.interior').mouseenter(function(){
       console.log(seekName($(this).attr('taxid')))
@@ -185,18 +185,18 @@ remove_unwanted = function(t)
 }
 
 // Annotate tree *t* by counting number of leaves
-// underneath each node.  .leaves attribute is modified.
-leaves = function(t) {
+// underneath each node.  .weight attribute is modified.
+decorateWeight = function(t) {
     if(!t.children) {
-        t.leaves = 1
+        t.weight = 1
         return t
     }
     var l = 0;
     $(t.children).each(function(i, c){
-      leaves(c)
-      l += c.leaves
+      decorateWeight(c)
+      l += c.weight
     })
-    t.leaves = l
+    t.weight = l
     return t
 }
 // Allocate position and size for a box for each node in the tree.
@@ -265,13 +265,10 @@ squarify = function(t, o, box)
     t.pos = o.slice()
     if(t.children) {
         var bb = 0;
-        // Parent of groups containing leaves (usually a family
-        // when the leaves are genus).  Probably not quite the correct
-        // test as some orders directly contain a family that directly
-        // contains a genus (for example Nandinia).  There are also
-        // other families that do not contain subfamilies.
-        if(t.children[0].children && !t.children[0].children[0].children) {
+        if(rank[t.name] == 'family') {
             bb = BB
+        } else if(rank[t.name] == 'order') {
+            bb = BB*1.4
         }
         return sq(t, t.children, o, box, bb)
     }
@@ -288,7 +285,7 @@ sq = function(node, children, o, box, bb)
     box = [box[0]-bb, box[1]-bb]
     var axis = Number(box[1] > box[0])
     var row = []
-    var ss = children.reduce(function(x,y){return x+y.leaves}, 0)
+    var ss = children.reduce(function(x,y){return x+y.weight}, 0)
     var af = box[0]*box[1]/ss; // Area Factor
     var w = box[1-axis]
     do {
@@ -318,16 +315,16 @@ sq = function(node, children, o, box, bb)
 
 // *row* list of children (subset);
 // *w* dimension to be subdivided;
-// *factor* multiplier to convert .leaves into area.
+// *factor* multiplier to convert .weight into area.
 worst = function(row, w, factor)
 {
     if(row.length == 0) {
         return +Infinity
     }
-    var s = row.reduce(function(x,y){return x+y.leaves}, 0)
+    var s = row.reduce(function(x,y){return x+y.weight}, 0)
     s *= factor
     return Array.max(row.map(function(t){
-        var r = t.leaves*factor
+        var r = t.weight*factor
         return Math.max(w*w*r/(s*s),s*s/(w*w*r))}))
 }
 
@@ -344,8 +341,8 @@ worst = function(row, w, factor)
 // bottom sides of the group.
 layout = function(node, rest, row, axis, o, box, bb)
 {
-    var ss = (rest.concat(row)).reduce(function(x,y){return x+y.leaves}, 0)
-    var s = row.reduce(function(x,y){return x+y.leaves}, 0)
+    var ss = (rest.concat(row)).reduce(function(x,y){return x+y.weight}, 0)
+    var s = row.reduce(function(x,y){return x+y.weight}, 0)
     var w = box[1-axis]
     // Each subbox will be length *p* along the axis *axis*,
     // leaving a border of *bb* to its right/bottom.
@@ -354,7 +351,7 @@ layout = function(node, rest, row, axis, o, box, bb)
     $(row).each(function(i,c){
         var cbox = [null, null]
         cbox[axis] = p
-        cbox[1-axis] = (c.leaves * w / s) - bb
+        cbox[1-axis] = (c.weight * w / s) - bb
         squarify(c, co, cbox)
         co[1-axis] += cbox[1-axis] + bb
     })
@@ -377,7 +374,7 @@ split1 = function(t, axis, o, dimension)
     // This also draws them in the same sequence, which is
     // different from how it used to be.
     var sl = t.children.concat().sort(function(a,b){
-        return a.leaves - b.leaves;
+        return a.weight - b.weight;
     })
     return split1list(sl, axis, o, dimension)
 }
@@ -389,7 +386,7 @@ split1 = function(t, axis, o, dimension)
 splitm = function(t, m, axis, o, dimension)
 {
     // *n* leaves in each of *m* rows.
-    var n = Math.ceil(t.leaves/m)
+    var n = Math.ceil(t.weight/m)
     var j;
     var res = true;
     // Allocate space for each 'row'.  Tricky.
@@ -402,7 +399,7 @@ splitm = function(t, m, axis, o, dimension)
         var c = 0;
         var rowstart = i;
         do {
-            c += t.children[i].leaves
+            c += t.children[i].weight
             ++i
         } while(i < t.children.length && c < n)
         // :todo: when c > n, consider whether to put
@@ -426,7 +423,7 @@ split1list = function(inorder, axis, o, dimension)
     // Total number of leaves in children (including
     // space-filling fake boxes).
     var leaves = inorder.reduce(function(a,b){
-        return a+b.leaves}, 0)
+        return a+b.weight}, 0)
     var space;
     var n = inorder.length;
 
@@ -441,7 +438,7 @@ split1list = function(inorder, axis, o, dimension)
             // fake child; insert blank space
             return
         }
-        var some = c.leaves/leaves * space
+        var some = c.weight/leaves * space
         var childbox = dimension.slice()
         $(childbox).each(function(i,d) {
             if(i == axis) {
@@ -452,7 +449,7 @@ split1list = function(inorder, axis, o, dimension)
         })
         boxes(c, co, childbox)
         space -= c.size[axis]
-        leaves -= c.leaves
+        leaves -= c.weight
         co[axis] += c.size[axis] + BB
     })
     if(0 > space) {
