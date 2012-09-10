@@ -51,7 +51,7 @@ u='data/ncbi.json'
 n='data/name.json'
 x='data/extinct.json'
 r='data/rank.json'
-var BB = 2; // Border within each box.
+var BB = 3; // Border within each box.
 $.getJSON(u, function(data){
     alltree = data;
     console.log('loaded', u);
@@ -263,6 +263,10 @@ squarify = function(t, o, box)
     t.size = box.slice()
     t.pos = o.slice()
     if(t.children) {
+        if(!t.children[0].children) {
+            o = [o[0]+BB, o[1]+BB]
+            box = [box[0]-2*BB,box[1]-2*BB]
+        }
         return sq(t, t.children, o, box)
     }
     return null
