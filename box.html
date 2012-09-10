@@ -619,7 +619,7 @@ boxdrawr = function(t, selector) {
     var d = 'M'+x+' '+y+'v'+h+'h'+w+'V'+y+'z';
     var path;
     // CSS class, not the rank.
-    var class_ = seekName(t.name);
+    var class_ = getNames(t.name).scientific;
     if(t.outofspace) {
         class_ += ' outofspace'
     }
