@@ -13,6 +13,16 @@ class Error(Exception):
 # Example URL
 wikibase = 'http://species.wikimedia.org/w/index.php'
 
+def raw(title):
+    """Return the raw wiki markup for a page.  Returns a list of
+    strings."""
+
+    q = urllib.urlencode(dict(action='raw', title=title))
+    url = "%s?%s" % (wikibase, q)
+    body = urllib.urlopen(url).readlines()
+
+    return body
+
 def getInfo(title):
     """From a title (species or genus), get a variety of
     information: the (english) common name; list of species.
@@ -20,9 +30,7 @@ def getInfo(title):
 
     res = {}
 
-    q = urllib.urlencode(dict(action='raw', title=title))
-    url = "%s?%s" % (wikibase, q)
-    body = urllib.urlopen(url).readlines()
+    body = raw(title)
 
     res['vernacular'] = vernacular(body)
 
@@ -89,16 +97,24 @@ def section(name, f):
         yield l
 
 def main(argv=None):
+    import getopt
     import sys
     if argv is None:
         argv = sys.argv
-    arg = argv[1:]
+    command = 'info'
+    opts,arg = getopt.getopt(argv[1:], '', ['raw'])
+    for o,v in opts:
+        if o == '--raw':
+            command = 'raw'
     for x in arg:
         try:
-            info = getInfo(x)
-            print json.dumps(info['vernacular'])
-            if len(info['extant']) == 1:
-                print '  monotypic'
+            if command == 'info':
+                info = getInfo(x)
+                print json.dumps(info['vernacular'])
+                if len(info['extant']) == 1:
+                    print '  monotypic'
+            if command == 'raw':
+                print ''.join(raw(x))
         except Error as m:
             print json.dumps(dict(error="%s: %s" % (x,m)))
 
