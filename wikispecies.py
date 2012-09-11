@@ -70,7 +70,7 @@ def vernacular(body):
     returned (which is empty when there are no common names).
     """
     vsection = ''.join(section('Vernacular', body)).replace('\n','')
-    m = re.search(r'{{(.*)}}', vsection)
+    m = re.search(r'{{(.*?)}}', vsection)
     if not m:
         return []
     s = m.group(1)
