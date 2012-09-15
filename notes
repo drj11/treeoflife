@@ -3,7 +3,7 @@
 Each lowest-level box on the poster will describe a genus.  It could feature the following information:
   - Scientific Name;
   - Common Name (see below);
-  - Extinct;
+  - Entirely Extinct / contains some extinct species;
   - number of species / is monotypic;
   - picture;
   - Range (using the 8 Ecozones? see wikipedia);
@@ -24,6 +24,17 @@ thing is fruitless.  *Lepus* includes species with common name
 jackrabbit, and excludes species with common name hare
 (*Caprolagus hispidus* and *Pronolagus spp*). (OTOH Lepus has
 genbank common name 'hares' in the NCBI dataset).
+
+The wikispecies.py program extracts common names from
+wikispecies, which may be an additional useful source (for
+example, it has common names for *Martes* *Nasua* *Procyon*).
+
+## Extinction ##
+
+*Hydrodamalis* is extinct, but the NCBI database doesn't record it
+as such.  Perhaps in general MSW3 is a more reliable source, but
+then again it also lists *Hydrodamalis* as not extinct (but notes
+in a comment that IUCN list the species as extinct *sigh*).
 
 ## Data sources ##
 
