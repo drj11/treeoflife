@@ -1,5 +1,7 @@
 #!/usr/bin/env python
-# handle ncbi dump files.
+# ncbi.py > data/ncbi.json
+
+"""Convert NCBI dump files into ncbi.json file."""
 
 import json
 import sys
