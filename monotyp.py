@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # coding:utf-8
+# monotyp.py > data/msw-common.json
 
-# Map Genus to species for monotypic genera.
+"""Map Genus to species for monotypic genera."""
 
 # The CSV file appears to be using Windows-1252 encoding, though
 # this is undocumented.  It is common to see a mixture of
