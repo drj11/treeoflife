@@ -209,47 +209,8 @@ decorateWeight = function(t) {
 // number of leaves under each child.
 boxes = function(t, o /* origin [x,y] */, box /* [width, height] */)
 {
-    var minsize = 10; // Minimum width or height for a box.
     t.pos = o.slice()
-    if(!t.children) {
-        var w = Math.max(minsize, box[0])
-        var h = Math.max(minsize, box[1])
-        t.size = [w, h]
-        return
-    }
-    var axis;
-    if(box[0]>=box[1]) {
-        t.layout = 'horiz'
-        axis = 0
-    } else {
-        t.layout = 'vert'
-        axis = 1
-    }
     squarify(t, o, box)
-    if(false) {
-        if(!split1(t, axis, o, box)) {
-            var m = 2;
-            var layout = t.layout
-            var res;
-            do {
-                t.layout = m + layout
-                res = splitm(t, m, axis, o, box)
-                ++m
-            } while(!res && m <= 4)
-            if(!res) {
-              console.log(t.name, "not enough "+['horiz','vert'][axis])
-              t.outofspace = true
-            }
-            t.size = box.slice()
-        } else {
-            // Allow box to stretch in the other dimension to *axis*.
-            // Slightly nasty in that it just assumes 2 axes.
-            var maxd = Array.max(t.children.map(function(x){
-                return x.size[1-axis]}))
-            t.size = [maxd + 2*BB, maxd + 2*BB]
-            t.size[axis] = box[axis]
-        }
-    }
 }
 
 // After [SQUARIFY].
@@ -350,7 +311,8 @@ worst = function(row, w, factor)
 // bottom sides of the group.
 layout = function(node, rest, row, axis, o, box, bb)
 {
-    var ss = (rest.concat(row)).reduce(function(x,y){return x+y.weight}, 0)
+    var ss = (rest.concat(row)).reduce(function(x,y){
+      return x+y.weight}, 0)
     var s = row.reduce(function(x,y){return x+y.weight}, 0)
     var w = box[1-axis]
     // Each subbox will be length *p* along the axis *axis*,
@@ -369,102 +331,6 @@ layout = function(node, rest, row, axis, o, box, bb)
     var rbox = box.slice()
     rbox[axis] -= p
     return [ro,rbox]
-}
-    
-
-// Split the box along a single axis, allocating space for each
-// child (in t.children). *dimension* gives the size of
-// the box, [w,h].  After returning, each element of t.children
-// will have a .size attribute.  Returns true if there was
-// enough space, but false if there was not enough space.
-split1 = function(t, axis, o, dimension)
-{
-    // Sort children in increasing order (of leaf count).
-    // This also draws them in the same sequence, which is
-    // different from how it used to be.
-    var sl = t.children.concat().sort(function(a,b){
-        return a.weight - b.weight;
-    })
-    return split1list(sl, axis, o, dimension)
-}
-// Split the box into *m*, with cuts parallel to *axis*, then split
-// again to allocate space for the children.
-// We use 'row' in this function to mean the sequence parellel
-// to *axis*, which may be either vertical or horizontal.  There
-// are *m* rows.
-splitm = function(t, m, axis, o, dimension)
-{
-    // *n* leaves in each of *m* rows.
-    var n = Math.ceil(t.weight/m)
-    var j;
-    var res = true;
-    // Allocate space for each 'row'.  Tricky.
-    var dim = dimension.slice()
-    dim[1-axis] = (dimension[1-axis]-(m+1)*BB)/m + 2*BB
-    // Index into t.children array.
-    var i = 0;
-    for(j=0; m>j; ++j) {
-        // Count, so far, of leaves in this row.
-        var c = 0;
-        var rowstart = i;
-        do {
-            c += t.children[i].weight
-            ++i
-        } while(i < t.children.length && c < n)
-        // :todo: when c > n, consider whether to put
-        // last child in this row or next row.
-        var sl = t.children.slice(rowstart, i)
-        while(sl.length < n) {
-            // fake child to insert a blank space
-            sl = sl.concat([{leaves:1, fake:true}])
-        }
-        // Row origin.
-        var ro = o.slice()
-        ro[1-axis] += j*(dim[1-axis] - BB)
-        if(!split1list(sl, axis, ro, dim)) {
-            res = false
-        }
-    }
-    return res
-}
-split1list = function(inorder, axis, o, dimension)
-{
-    // Total number of leaves in children (including
-    // space-filling fake boxes).
-    var leaves = inorder.reduce(function(a,b){
-        return a+b.weight}, 0)
-    var space;
-    var n = inorder.length;
-
-    // child origin
-    var co = o.slice()
-    co[0] += BB
-    co[1] += BB
-    // Split along axis *axis* (0: horizontal, 1: vertical).
-    space = dimension[axis] - (n+1)*BB
-    $(inorder).each(function(i,c){
-        if(c.fake) {
-            // fake child; insert blank space
-            return
-        }
-        var some = c.weight/leaves * space
-        var childbox = dimension.slice()
-        $(childbox).each(function(i,d) {
-            if(i == axis) {
-                childbox[i] = some
-            } else {
-                childbox[i] -= 2*BB
-            }
-        })
-        boxes(c, co, childbox)
-        space -= c.size[axis]
-        leaves -= c.weight
-        co[axis] += c.size[axis] + BB
-    })
-    if(0 > space) {
-        return false
-    }
-    return true
 }
 
 // Return node with name.
