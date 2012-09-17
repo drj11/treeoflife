@@ -1,9 +1,10 @@
 #!/usr/bin/env python
+# rank.py > data/rank.json
+
+"""Extract the taxonomic rank from dump/nodes.dmp"""
 
 import json
 import sys
-
-"""Extract the taxonomic rank from dump/nodes.dmp"""
 
 def dumprows(f):
     """Return each row as a list."""
