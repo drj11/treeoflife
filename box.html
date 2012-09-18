@@ -223,16 +223,16 @@ squarify = function(t, o, box)
 {
     t.size = box.slice()
     t.pos = o.slice()
-    if(t.children) {
-        var bb = 0;
-        if(rank[t.name] == 'family') {
-            bb = BB
-        } else if(rank[t.name] == 'order') {
-            bb = BB*1.4
-        }
-        return sq(t, t.children, o, box, bb)
+    if(!t.children) {
+        return null
     }
-    return null
+    var bb = 0;
+    if(rank[t.name] == 'family') {
+        bb = BB
+    } else if(rank[t.name] == 'order') {
+        bb = BB*1.4
+    }
+    return sq(t, t.children, o, box, bb)
 }
 
 // *node* should only be used for logging/debugging.
@@ -248,6 +248,10 @@ sq = function(node, children, o, box, bb)
     var ss = children.reduce(function(x,y){return x+y.weight}, 0)
     var af = box[0]*box[1]/ss; // Area Factor
     var w = box[1-axis]
+    // A loop to accumulate into row[] an initial subset of
+    // children[].  Each element in row in given a score (its
+    // aspect ratio), and row is increased until the worst score
+    // gets worse.
     do {
         var c = children[0]
         if(worst(row, w, af) <= worst(row.concat([c]), w, af)) {
@@ -261,16 +265,18 @@ sq = function(node, children, o, box, bb)
     o = r[0]
     box = r[1]
 
-    // Handle remaining children in remaining space.
-    if(children.length > 0) {
-        // Add back in top border, which will be removed
-        // by this recursive callee.
-        o = o.slice()
-        o[1-axis] -= bb
-        box = box.slice()
-        box[1-axis] += bb
-        return sq(node, children, o, box, bb)
+    if(!children.length) {
+        return
     }
+    // Handle remaining children in remaining space.
+
+    // Add back in top border, which will be removed
+    // by this recursive callee.
+    o = o.slice()
+    o[1-axis] -= bb
+    box = box.slice()
+    box[1-axis] += bb
+    return sq(node, children, o, box, bb)
 }
 
 // *row* list of children (subset);
@@ -310,9 +316,11 @@ worst = function(row, w, factor)
 // bottom sides of the group.
 layout = function(node, rest, row, axis, o, box, bb)
 {
-    var ss = (rest.concat(row)).reduce(function(x,y){
-      return x+y.weight}, 0)
+    // Sum weights of this row to be layed out.
     var s = row.reduce(function(x,y){return x+y.weight}, 0)
+    // Sum weights of all children that will be in box.
+    var ss = s + rest.reduce(function(x,y){return x+y.weight}, 0)
+    // Length to be divided up.
     var w = box[1-axis]
     // Each subbox will be length *p* along the axis *axis*,
     // leaving a border of *bb* to its right/bottom.
