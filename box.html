@@ -238,12 +238,14 @@ squarify = function(t, o, box)
 // *node* should only be used for logging/debugging.
 // *bb* is the required border, which should be removed
 // from the area allocated by *box*.
-sq = function(node, children, o, box, bb)
+sq = function(node, children, o, box, bb, axis)
 {
     // Remove top and left borders.
     o = [o[0]+bb, o[1]+bb]
     box = [box[0]-bb, box[1]-bb]
-    var axis = Number(box[1] > box[0])
+    if(axis === undefined) {
+        axis = Number(box[1] > box[0])
+    }
     var row = []
     var ss = children.reduce(function(x,y){return x+y.weight}, 0)
     var af = box[0]*box[1]/ss; // Area Factor
@@ -276,7 +278,7 @@ sq = function(node, children, o, box, bb)
     o[1-axis] -= bb
     box = box.slice()
     box[1-axis] += bb
-    return sq(node, children, o, box, bb)
+    return sq(node, children, o, box, bb, axis)
 }
 
 // *row* list of children (subset);
@@ -650,6 +652,8 @@ splitwords = function(text, w)
         /(?=cebus$)/,
         // Arcto-cephalus
         /(?=cephalus$)/,
+        // Raphi-cerus
+        /(?=cerus$)/,
         // Tasma-cetus
         /(?=cetus$)/,
         // Chryso-chloris
