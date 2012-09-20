@@ -26,6 +26,12 @@ Possible abbreviations:
   OC - Oceania
   AQ - Antarctica
 
+## Scientific Names ##
+
+Some scientific names have non-ASCII characters; it's not
+entirely clear.  [PARKER1982] lists Poëlagus (with an
+e-dieresis), but [MSW3] and NCBI list Poelagus.
+
 ## Common Name ##
 
 Common Names for Genera.
@@ -79,3 +85,8 @@ http://en.wikipedia.org/wiki/File:Giraffe_Ithala_KZN_South_Africa_Luca_Galuzzi_2
 [MSW3] "Mammal Species of the World"; Wilson & Reeder; Third
 Edition; Bucknell University;
 http://www.bucknell.edu/msw3/browse.asp?id=13500254
+
+[PARKER1982] "Synopsis and Classification of Living Organisms";
+Parker, S.P. (ed.); 1982; McGraw-Hill, New York.
+
+
