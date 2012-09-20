@@ -322,6 +322,9 @@ layout = function(node, rest, row, axis, o, box, bb)
     var ss = s + rest.reduce(function(x,y){return x+y.weight}, 0)
     // Length to be divided up.
     var w = box[1-axis]
+
+    adjust_weight(node, row, w)
+
     // Each subbox will be length *p* along the axis *axis*,
     // leaving a border of *bb* to its right/bottom.
     var p = s*box[axis]/ss - bb
@@ -338,6 +341,39 @@ layout = function(node, rest, row, axis, o, box, bb)
     var rbox = box.slice()
     rbox[axis] -= p
     return [ro,rbox]
+}
+
+// Ensure that no element of *row* has too small a slice of *w*.
+adjust_weight = function(node, row, w)
+{
+    var s = row.reduce(function(x,y){return x+y.weight}, 0)
+    var count = 0;
+    $(row).each(function(i,c){
+        var minsize = 10
+        var r = rank[c.name]
+        if(r == 'family') {
+            minsize += 6
+        }
+        if(r == 'order') {
+            minsize += 15
+        }
+        if(c.weight*w/s < minsize) {
+            count += 1
+        }
+    })
+    if(count == 0) {
+        return
+    }
+    if(count > 1) {
+        console.log("too many thin boxes",
+          node, seekName(node.name),
+          w, s, row, row.map(function(c){return c.weight}))
+    }
+    if(count == 1) {
+        console.log("just one thin box",
+          node, seekName(node.name),
+          w, s, row, row.map(function(c){return c.weight}))
+    }
 }
 
 // Return node with name.
