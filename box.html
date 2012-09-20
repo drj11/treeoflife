@@ -325,7 +325,7 @@ layout = function(node, rest, row, axis, o, box, bb)
     // Length to be divided up.
     var w = box[1-axis]
 
-    adjust_weight(node, row, w)
+    adjust_weight(node, row, w, axis)
 
     // Each subbox will be length *p* along the axis *axis*,
     // leaving a border of *bb* to its right/bottom.
@@ -346,7 +346,7 @@ layout = function(node, rest, row, axis, o, box, bb)
 }
 
 // Ensure that no element of *row* has too small a slice of *w*.
-adjust_weight = function(node, row, w)
+adjust_weight = function(node, row, w, axis)
 {
     var s = row.reduce(function(x,y){return x+y.weight}, 0)
     var count = 0;
@@ -369,12 +369,12 @@ adjust_weight = function(node, row, w)
     if(count > 1) {
         console.log("too many thin boxes",
           node, seekName(node.name),
-          w, s, row, row.map(function(c){return c.weight}))
+          axis, w, s, row, row.map(function(c){return c.weight}))
     }
     if(count == 1) {
         console.log("just one thin box",
           node, seekName(node.name),
-          w, s, row, row.map(function(c){return c.weight}))
+          axis, w, s, row, row.map(function(c){return c.weight}))
     }
 }
 
