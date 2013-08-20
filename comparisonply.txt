@@ -36,7 +36,7 @@ Separate lexing and parsing phases contribute to the clarity.
 In the recursive descent parser this hasn't been done.
 Obviously the phases _could_ have been separated but the PLY
 method encourages this good practice.  Managing the lexing state
-requires a fair amount of code in the reursive descent parser
+requires a fair amount of code in the recursive descent parser
 (even though the lexer, such as it is, is really simple), and this
 has been largely eliminated in the PLY code.
 
