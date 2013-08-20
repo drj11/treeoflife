@@ -31,7 +31,7 @@ def rows(inp):
         yield l
 
 def remove_hidden(n, hidden):
-    """Remove any nodes from n that have names in the set
+    """Remove any nodes from *n* that have names in the set
     *hidden*.  Result may share structure with *n*, but *n* will
     not be modified.
     """
