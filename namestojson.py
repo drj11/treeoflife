@@ -17,7 +17,7 @@ def names(inp, out):
             if class_ == 'scientific name':
                 d['scientific'] = name
         r[taxid] = d
-    json.dump(r, out)
+    json.dump(r, out, indent=2)
 
 def rows(inp):
     for line in inp:
