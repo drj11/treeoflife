@@ -49,7 +49,7 @@ def main():
     with open('dump/nodes.dmp') as f:
         d = dict((row[0], row) for row in rows(f))
         tree = build_tree(d)
-        json.dump(tree, sys.stdout)
+        json.dump(tree, sys.stdout, indent=2)
 
 if __name__ == '__main__':
     main()
