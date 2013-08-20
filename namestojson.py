@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# nametojson.py > data/name.json
 
 import itertools
 import json
