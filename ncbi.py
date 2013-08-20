@@ -46,10 +46,10 @@ def mktree(ch, at):
 
 
 def main():
-    f = open('dump/nodes.dmp')
-    d = dict((row[0], row) for row in rows(f))
-    tree = build_tree(d)
-    json.dump(tree, sys.stdout)
+    with open('dump/nodes.dmp') as f:
+        d = dict((row[0], row) for row in rows(f))
+        tree = build_tree(d)
+        json.dump(tree, sys.stdout)
 
 if __name__ == '__main__':
     main()
