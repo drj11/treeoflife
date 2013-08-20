@@ -27,8 +27,8 @@ def rows(inp):
         yield l
 
 def main():
-    f = open('dump/names.dmp')
-    names(f, sys.stdout)
+    with open('dump/names.dmp') as f:
+        names(f, sys.stdout)
 
 if __name__ == '__main__':
     main()
